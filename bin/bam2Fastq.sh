@@ -10,7 +10,7 @@
 # bamFile:
 #   input BAM file
 #
-# compressIntermediateResults:
+# compressFastqs:
 #   Temporary files during sorting are compressed or not (gz), default: true
 #
 # excludedFlags:
@@ -29,7 +29,7 @@ set -o pipefail
 set -uvex
 
 getFastqSuffix() {
-    if [[ "$compressIntermediateFastqs" == true ]]; then
+    if [[ "$compressFastqs" == true ]]; then
         compressionSuffix=".gz"
     else
         compressionSuffix=""
@@ -48,8 +48,8 @@ fastqForGroupIndex() {
     echo "${files[0]}"
 }
 
-biobambamCompressIntermediateFastqs() {
-    if [[ "$compressIntermediateFastqs" == true ]]; then
+biobambamCompressFastqs() {
+    if [[ "$compressFastqs" == true ]]; then
         echo 1
     else
         echo 0
@@ -90,7 +90,7 @@ processPairedEndWithReadGroupsBiobambam() {
         collate=1 \
         colsbs=268435456 \
         colhlog=19 \
-        gz=$(biobambamCompressIntermediateFastqs) \
+        gz=$(biobambamCompressFastqs) \
         outputperreadgroupsuffixF=_R1."$FASTQ_SUFFIX" \
         outputperreadgroupsuffixF2=_R2."$FASTQ_SUFFIX" \
         outputperreadgroupsuffixO=_U1."$FASTQ_SUFFIX" \
@@ -119,7 +119,7 @@ samtoolsExclusions() {
 processPairedEndWithReadGroupsPicard() {
     local baseName=$(basename "$bamFile" .bam)
 
-    local PICARD_OPTIONS="$PICARD_OPTIONS COMPRESS_OUTPUTS_PER_RG=$compressIntermediateFastqs OUTPUT_PER_RG=true RG_TAG=${readGroupTag:-id} OUTPUT_DIR=$outputDir/"
+    local PICARD_OPTIONS="$PICARD_OPTIONS COMPRESS_OUTPUTS_PER_RG=$compressFastqs OUTPUT_PER_RG=true RG_TAG=${readGroupTag:-id} OUTPUT_DIR=$outputDir/"
     local JAVA_OPTIONS="${JAVA_OPTIONS:-$JAVA_OPTS}"
     ## Only process the non-supplementary (-F 0x800), primary (-F 0x100) alignments. BWA flags chimeric alignments as supplementary while the
     ## full-length reads are exactly the ones not flagged supplementary. See http://seqanswers.com/forums/showthread.php?t=40239.
@@ -132,7 +132,7 @@ processPairedEndWithoutReadGroupsPicard() {
     mkdir -p "$outputDir"
 
     ## Write just 2-3 FASTQs, depending on whether unpairedFastq is true.
-    local PICARD_OPTIONS="$PICARD_OPTIONS COMPRESS_OUTPUTS_PER_RG=$compressIntermediateFastqs FASTQ=${unsortedFastqs[0]} SECOND_END_FASTQ=${unsortedFastqs[1]}"
+    local PICARD_OPTIONS="$PICARD_OPTIONS COMPRESS_OUTPUTS_PER_RG=$compressFastqs FASTQ=${unsortedFastqs[0]} SECOND_END_FASTQ=${unsortedFastqs[1]}"
     if [[ "${writeUnpairedFastq:-false}" == true ]]; then
         local PICARD_OPTIONS="$PICARD_OPTIONS UNPAIRED_FASTQ=${unsortedFastqs[2]}"
     fi
