@@ -11,6 +11,11 @@ WORKFLOWLIB___SHELL_OPTIONS=$(set +o)
 set +o verbose
 set +o xtrace
 
+# Accessor to retrieve global temporary directory setting.
+tmpDir() {
+  echo "${tmpDir:-tmp}"
+}
+
 normalizeBoolean() {
     if [[ "${1:-false}" == "true" ]]; then
         echo "true"
@@ -37,23 +42,34 @@ mbuf () {
     "$MBUFFER_BINARY" -m "$bufferSize" -q -l /dev/null ${@}
 }
 
-registerPid() {
-    local pid="${1:-$!}"
-    declare -gax pids=(${pids[@]} $pid)
+lockFileName() {
+  local resourceName="${1:?No resource name given}"
+  echo $(tmpDir)/"$resourceName.lock"
+}
+
+lockResource() {
+  local resourceName="${1:?No resource name given}"
+  filelock $(lockFileName "$resourceName")
+}
+
+unlockResource() {
+  local resourceName="${1:?No resource name given}"
+  local lockFileName=$(lockFileName "$resourceName")
+  if [[ ! -d "$lockFileName" ]]; then
+      throw "Trying to remove non-directory lock: '$lockFileName'" 1
+  fi
+  rmdir "$lockFileName"
+}
+
+tmpFiles() {
+  echo "$(tmpDir)/tmpFiles"
 }
 
 registerTmpFile() {
     local tmpFile="${1:?No temporary file name to register}"
-    # Note that the array is build in reversed order, which simplifies the deletion of nested directories.
-    declare -gax tmpFiles=("$tmpFile" "${tmpFiles[@]}")
-}
-
-reverseArray() {
-    local c=""
-    for b in "$@"; do
-        c="$b $c"
-    done
-    echo $c
+    lockResource "tmpFiles"
+    echo "$tmpFile" >> $(tmpFiles)
+    unlockResource "tmpFiles"
 }
 
 ## Always return a default read group, in case the file has no read groups annotated. This ensures that Roddy will create appropriate directories.
@@ -92,26 +108,19 @@ composeFastqFiles() {
 # The dummy contains a random string to avoid collision with possible filenames (the filename 'dummy' is quite likely).
 ARRAY_ELEMENT_DUMMY=$(mktemp -u "_dummy_XXXXX")
 
-waitForRegisteredPids_BashSucksVersion() {
-    jobs
-    declare -a realPids=$(for pid in "${pids[@]}"; do if [[ "$pid" != "$ARRAY_ELEMENT_DUMMY" ]]; then echo "$pid"; fi; done)
-    if [[ -v realPids && ${#realPids[@]} -gt 0 ]]; then
-        wait ${realPids[@]}
-        declare EXIT_CODE=$?
-        if [[ ${EXIT_CODE} -ne 0 ]]; then
-            throw ${EXIT_CODE} "One of the following processes ended with exit code ${EXIT_CODE}: ${realPids[@]}"
-        fi
-    fi
-    pids=("$ARRAY_ELEMENT_DUMMY")
-}
 setUp_BashSucksVersion() {
-    declare -g -a -x tmpFiles=("$ARRAY_ELEMENT_DUMMY")
-    declare -g -a -x pids=("$ARRAY_ELEMENT_DUMMY")
+    mkdir -p "$(tmpDir)"
+
+    lockResource "tmpFiles"
+    echo "$ARRAY_ELEMENT_DUMMY" > $(tmpFiles)
+    unlockResource "tmpFiles"
 
     # Remove all registered temporary files upon exit
-    trap cleanUp_BashSucksVersion EXIT
+    trap "cleanUp_BashSucksVersion; rm \"$(tmpFiles)\"; rmdir \"$(tmpDir)\"" EXIT
 }
 cleanUp_BashSucksVersion() {
+    lockResource "tmpFiles"
+    declare -a tmpFiles=( $(cat $(tmpFiles) | tac) )
     if [[ $(isDebugSet) == "false" && -v tmpFiles && ${#tmpFiles[@]} -gt 1 ]]; then
         for f in ${tmpFiles[@]}; do
             if [[ "$f" == "$ARRAY_ELEMENT_DUMMY" ]]; then
@@ -122,21 +131,25 @@ cleanUp_BashSucksVersion() {
                 rm -f "$f"
             fi
         done
-        tmpFiles=("$ARRAY_ELEMENT_DUMMY")
+        echo "$ARRAY_ELEMENT_DUMMY" > $(tmpFiles)
     fi
+    unlockResource "tmpFiles"
 }
 
 # These versions only works with Bash >4.4. Prior version do not really declare the array variables with empty values and set -u results in error message.
-waitForRegisteredPids() {
-    jobs
-    wait ${pids[@]}
-    pids=()
-}
 setUp() {
-    declare -g -a -x tmpFiles=()
-    declare -g -a -x pids=()
+    mkdir -p "$(tmpDir)"
+
+    lockResource "tmpFiles"
+    cat /dev/null > $(tmpFiles)
+    unlockResource "tmpFiles"
+
+     # Remove all registered temporary files upon exit
+    trap "cleanUp; rm \"$(tmpFiles)\"; rmdir \"$(tmpDir)"\" EXIT
 }
 cleanUp() {
+    lockResource "tmpFiles"
+    declare -a tmpFiles=( $(cat $(tmpFiles) | tac) )
     if [[ $(isDebugSet) == "false" && -v tmpFiles && ${#tmpFiles[@]} -gt 0 ]]; then
         for f in "${tmpFiles[@]}"; do
             if [[ -d "$f" ]]; then
@@ -145,8 +158,9 @@ cleanUp() {
                 rm "$f"
             fi
         done
-        tmpFiles=()
+        cat /dev/null > $(tmpFiles)
     fi
+    unlockResource "tmpFiles"
 }
 
 # Used to wait for a file expected to appear within the next moments. This is necessary, because in a network filesystems there may be latencies
@@ -175,7 +189,7 @@ ensureDirectoryExists() {
 
 tmpBaseFile() {
     local name="${1:?No filename given}"
-    echo "$RODDY_SCRATCH"/$(basename "$name")
+    echo $(tmpDir)/$(basename "$name")
 }
 
 createFifo() {
@@ -200,20 +214,21 @@ md5File() {
    assertNonEmpty "$outputFile" "outputFile not defined" || return $?
 
    local md5Fifo=$(tmpBaseFile "$md5File")".fifo"
-   mkFifo "$md5Fifo"
-   registerTmpFile "$md5Fifo"
+   createFifo "$md5Fifo"
 
-   cat $md5Fifo \
+   cat "$md5Fifo" \
         | md5sum \
         | cut -d ' ' -f 1 \
         > "$md5File" \
-        & registerPid
+        & md5Pid=$!
 
    cat "$inputFile" \
         | mbuf 10m \
             -f -o "$md5Fifo" \
             -f -o "$outputFile" \
-        & registerPid
+        & mbufPid=$!
+
+    wait "$md5Pid" "$mbufPid"
 }
 
 checkMd5Files() {

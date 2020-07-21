@@ -166,7 +166,7 @@ ensureAllFiles() {
 main() {
     "$SAMTOOLS_BINARY" quickcheck "$bamFile"
 
-    outputDir=$(basename "$bamFile")"_fastqs"
+    outputDir=${outputDir:-$(basename "$bamFile")"_fastqs"}
 
     # Re-Array the filenames variable (outputs). Bash does not transfer arrays properly to subprocesses. Therefore Roddy encodes arrays as strings
     # with enclosing parens. That is "(a b c)", with spaces as separators.

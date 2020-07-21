@@ -16,4 +16,5 @@ dependencies:
   - pigz=2.3.4
   - python=3.6
   - samtools=1.5
+  - filelock=3.0.12
 

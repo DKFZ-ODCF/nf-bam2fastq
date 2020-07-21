@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#
+# Try creating a locking directory. A poor-man's substutite for procmail's lockfile.
+#
+# Fails if the parent-directory is not executable or writable.
+#
+# Expects a single lock-file name as single parameter.
+#
+# Blocks as long as the lock-directory exists.
+#
+# TODO Implement timeouts
+# TODO Implement configurable polling intervals
+#
+lockFile="${1:?No lockfile provided}"
+pollingInterval=5
+
+lockFileDir=$(dirname "$lockFile")
+if [[ ! -n "$lockFileDir" ]]; then
+   if [[ ! -x "$lockFileDir" || ! -w "$lockFileDir" ]]; then
+      echo "Cannot create lockfile in '$lockFileDir'" >> /dev/stderr
+      exit 1
+   fi
+fi
+
+
+while ! mkdir "$lockFile" 2> /dev/null; do
+    sleep "$pollingInterval"
+done

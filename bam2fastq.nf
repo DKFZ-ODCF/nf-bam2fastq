@@ -4,10 +4,8 @@
 
 /** TODO
  *  - test data to NF
- *  - run natively (w/o container)
  *  - create container
  *  - run singularity container on LSF cluster
- *  - rename Roddy variables
  */
 
 params.bamFiles                    // Comma-separated list of input BAMs
@@ -43,9 +41,9 @@ ${allowedParameters.collect { "$it = ${params.get(it)}" }.join("\n")}
 """
 
 
-Channel.fromPath(params.bamFiles.split(',') as List<String>, checkIfExists: true).
-        set { bamFiles_ch }
-
+bamFiles_ch = Channel.
+        fromPath(params.bamFiles.split(',') as List<String>,
+                 checkIfExists: true)
 
 
 def bamToFastqCpus(params) {
@@ -71,43 +69,120 @@ process bamToFastq {
         file bamFile from bamFiles_ch
 
     output:
-        file "**/*.fastq.gz" into readsFiles_ch
+        tuple file(bamFile), file("**/*.fastq.gz") into readsFiles_ch
 
     shell:
     """
     PICARD_OPTIONS="VALIDATION_STRINGENCY=SILENT CREATE_MD5_FILE=${params.checkIntermediateFastqMd5} USE_JDK_DEFLATER=true USE_JDK_INFLATER=true" \
         pairedEnd="$params.pairedEnd" \
-        outputPerReadGroup="true" \
         writeUnpairedFastq="$params.writeUnpairedFastq" \
         excludedFlags="(${params.excludedFlags.split(",").join(" ")})" \
+        compressor="$params.compressor" \
+        compressorThreads="$params.compressorThreads" \
         compressFastqs="${params.compressIntermediateFastqs || (!params.sortFastqs && params.compressFastqs)}" \
-        converter="biobambam" \
         bamFile="$bamFile" \
+        outputPerReadGroup="true" \
+        converter="biobambam" \
+        outputDir="${bamFile}_fastqs" \
         bam2Fastq.sh
     """
 
 }
 
-readsFiles_ch.view()
+// Create two channels of matched paired-end and unmatched or single-end reads, each of tuples of (bam, fastq).
+readsFiles_ch.into { readsFilesA_ch; readsFilesB_ch}
+pairedFastqs_ch = readsFilesA_ch.flatMap {
+    def (bam, fastqs) = it
+    fastqs.grep { it.getFileName() =~ /.+_R[12]\.fastq(?:\.[^.]*)$/ }.
+            groupBy { fastq -> fastq.getFileName().toString().replaceFirst("_R[12].fastq.gz\$", "") }.
+            collect { key, files ->
+                assert files.size() == 2
+                files.sort()
+                [bam, files[0], files[1]]
+            }
+}
+
+unpairedFastqs_ch = readsFilesB_ch.flatMap {
+    def (bam, fastqs) = it
+    fastqs.
+            grep { it.getFileName() =~ /.+_(U[12]|S)\.fastq(?:\.[^.]*)$/ }.
+            collect { [bam, it] }
+}
 
 
-//process nameSortFastqs {
-//    cpus params.sortingThreads
-//    memory params.sortingMemory
-//
-//    when:
-//        sortFastqs
-//
-//    publishDir params.outputDir
-//
-//    input:
-//
-//    output:
-//
-//    script:
-//       compressedInputFastqs=$params.compressIntermediateFastqs
-//
-//}
+process nameSortUnpairedFastqs {
+    cpus params.sortThreads
+    memory params.sortMemory
+
+    publishDir params.outputDir
+
+    when:
+        params.sortFastqs
+
+    input:
+        tuple file(bam), file(fastq) from unpairedFastqs_ch
+
+    output:
+        tuple file(bam), file("**/*.sorted.fastq.gz") into sortedUnpairedFastqs_ch
+
+    script:
+    bamFileName = bam.getFileName().toString()
+    outDir = "${bamFileName}_sorted_fastqs"
+    """
+    mkdir -p "$outDir"
+    compressedInputFastqs="$params.compressIntermediateFastqs" \
+        converter="biobambam" \
+        compressor="$params.compressor" \
+        compressorThreads="$params.compressorThreads" \
+        sortThreads="$params.sortThreads" \
+        sortMemory="$params.sortMemory" \
+        fastqFile="$fastq" \
+        sortedFastqFile="${sortedFastqFile(outDir, fastq)}" \
+        coreutilsSortFastqSingle.sh
+    """
+
+}
+
+process nameSortPairedFastqs {
+    cpus params.sortThreads
+    memory params.sortMemory
+
+    publishDir params.outputDir
+
+    when:
+    params.sortFastqs
+
+    input:
+    tuple file(bam), file(fastq1), file(fastq2) from pairedFastqs_ch
+
+    output:
+    tuple file(bam), file(sortedFastqFile1), file(sortedFastqFile2) into sortedPairedFastqs_ch
+
+    script:
+    bamFileName = bam.getFileName().toString()
+    outDir = "${bamFileName}_sorted_fastqs"
+    sortedFastqFile1 = outDir + "/" + fastq1.getFileName().toString().replaceFirst(/\.fastq\.gz$/, ".sorted.fastq.gz")
+    sortedFastqFile2 = outDir + "/" + fastq2.getFileName().toString().replaceFirst(/\.fastq\.gz$/, ".sorted.fastq.gz")
+    """
+    mkdir -p "$outDir"
+    compressedInputFastqs="$params.compressIntermediateFastqs" \
+        converter="biobambam" \
+        compressor="$params.compressor" \
+        compressorThreads="$params.compressorThreads" \
+        sortThreads="$params.sortThreads" \
+        sortMemory="$params.sortMemory" \
+        fastqFile1="$fastq1" \
+        fastqFile2="$fastq2" \
+        sortedFastqFile1="${sortedFastqFile(outDir, fastq1)}" \
+        sortedFastqFile2="${sortedFastqFile(outDir, fastq2)}" \
+        coreutilsSortFastqPair.sh
+    """
+
+}
+
+def sortedFastqFile(String outDir, Path unsortedFastq) {
+    outDir + "/" + unsortedFastq.getFileName().toString().replaceFirst(/\.fastq\.gz$/, ".sorted.fastq.gz")
+}
 
 
 /** Check whether parameters are correct (names and values)
@@ -130,5 +205,5 @@ void checkParameters(parameters, List<String> allowedParameters) {
 
 
 workflow.onComplete {
-    log.info "Done!"
+    log.info "Success!"
 }
