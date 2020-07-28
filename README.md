@@ -2,7 +2,7 @@
 
 Convert BWA-generated und possibly merged and duplication-marked BAM files back to FASTQ. 
 
-By default, FASTQ files are sorted by their FASTQ IDs to avoid e.g. that reads from position-sorted BAMs are produced in position-sorted order, with possible subsequent problems during re-alignment (e.g. if alignment parameters like insert-size are estimated from the data itself). Most jobs are arctually sorting-jobs.
+By default, FASTQ files are sorted by their FASTQ IDs to avoid e.g. that reads from position-sorted BAMs are produced in position-sorted order, with possible subsequent problems during re-alignment (e.g. if alignment parameters like insert-size are estimated from the data itself). Most jobs are actually sorting-jobs -- so you can safe a lot of computation time, if the input order during alignment does not matter for you.
  
 Obviously, you can only reconstitute complete original FASTQs (except for order), if the BAM was not filtered in any way, e.g. by removing duplicates.  
 
