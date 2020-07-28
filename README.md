@@ -36,11 +36,18 @@ When doing BAM-to-FASTQ conversion with subsequent sorting, the unsorted output 
 
 ## Example
 
+Provided you have a working Conda installation and two test BAM files you can run
+
 ```bash
+mkdir test_out/
 nextflow run bam2fastq.nf -profile test,conda -ansi-log --bamFileList=test/test.bam --outputDir=test_out --sortFastqs=false
 ```
 
-For each BAM file in the comma-separated `--bamFileList` parameter, one directory with FASTQs is created in the `outputDir`.
+For each BAM file in the comma-separated `--bamFileList` parameter, one directory with FASTQs is created in the `outputDir`. With the `test` profile use only small BAM files. The `conda` profile defines a Conda environment from the `./task-environment.yml` file, which Nextflow will by default automatically set up in the `work` directory.
+
+## Test Data
+
+
 
 ## Origins
 
