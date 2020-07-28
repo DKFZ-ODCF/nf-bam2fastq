@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 #
+# Copyright (c) 2020 DKFZ.
+#
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/LICENSE.txt).
+#
+#
 # Try creating a locking directory. A poor-man's substutite for procmail's lockfile.
 #
 # Fails if the parent-directory is not executable or writable.

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2018 DKFZ.
+# Copyright (c) 2020 DKFZ.
 #
-# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/BamToFastqPlugin/blob/master/LICENSE.txt).
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/LICENSE.txt).
 #
 
 source "workflowLib.sh"
