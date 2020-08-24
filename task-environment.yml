@@ -1,10 +1,10 @@
-name: DKFZ-ODCF_Bam2Fastq
+name: nf-bam2fastq 
 channels:
   - conda-forge
   - bioconda
-  - bioconda-legacy
+#  - bioconda-legacy
   - defaults
-channel_priority: flexible
+channel_priority: strict
 dependencies:
   - bash=4.4.18
   - biobambam=2.0.87
@@ -16,5 +16,6 @@ dependencies:
   - pigz=2.3.4
   - python=3.6
   - samtools=1.5
+  - openssl=1.0
   - filelock=3.0.12
 

@@ -1,0 +1,7 @@
+*.iml
+*.png{,.*}
+*.html
+*.txt{,.*}
+test
+test_out
+work
