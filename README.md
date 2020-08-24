@@ -45,9 +45,23 @@ nextflow run bam2fastq.nf -profile test,conda -ansi-log --bamFileList=test/test.
 
 For each BAM file in the comma-separated `--bamFileList` parameter, one directory with FASTQs is created in the `outputDir`. With the `test` profile use only small BAM files. The `conda` profile defines a Conda environment from the `./task-environment.yml` file, which Nextflow will by default automatically set up in the `work` directory.
 
+There is also a dockerized version. You can build the container with
+
+```bash
+cd nf-bam2fastq
+docker build --rm --build-arg http_proxy=$HTTP_PROXY --build-arg https_proxy=$HTTPS_PROXY -t nf-bam2fastq ./
+```
+
+Then to run the workflow locally with Docker you can do e.g. (this time with sorting the FASTQs)
+
+```bash
+nextflow run bam2fastq.nf -profile test,docker -ansi-log --bamFiles=test/test1.bam,test/test2.bam --outputDir=test_out --sortFastqs=true
+```
+
+
 ## Test Data
 
-
+The test data in the `test/` directory is from https://github.com/genome/gms/wiki/HCC1395-WGS-Exome-RNA-Seq-Data.
 
 ## Origins
 

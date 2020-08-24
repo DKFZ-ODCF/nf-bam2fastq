@@ -62,7 +62,7 @@ def bamToFastqMemory(params) {
 process bamToFastq {
     cpus { bamToFastqCpus(params) }
     memory { bamToFastqMemory(params) }
-    
+
     publishDir params.outputDir, enabled: !params.sortFastqs
 
     input:
