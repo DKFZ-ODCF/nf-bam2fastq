@@ -45,23 +45,12 @@ bamFiles_ch = Channel.
         fromPath(params.bamFiles.split(',') as List<String>,
                  checkIfExists: true)
 
-
-def bamToFastqCpus(params) {
-    Double pairFactor = params.pairedEnd ? 2 : 1
-    Double unpairedFastqSummand = params.writeUnpairedFastq ? 1 : 0
-    Double checkMd5Summand = params.checkIntermediateFastqMd5 ? 1 : 0
-    Double compressIntermediate = params.compressIntermediateFastqs ? 1 : 0
-    Double compressThreadsFactor = params.compressorThreads
-    return 2
-}
-
-def bamToFastqMemory(params) {
-    return 15.GB
-}
-
 process bamToFastq {
-    cpus { bamToFastqCpus(params) }
-    memory { bamToFastqMemory(params) }
+    // Just bamtofastq
+    cpus 1
+
+    // The biobambam paper states something like 133 MB.
+    memory 300.MB
 
     publishDir params.outputDir, enabled: !params.sortFastqs
 
@@ -111,8 +100,8 @@ unpairedFastqs_ch = readsFilesB_ch.flatMap {
 
 
 process nameSortUnpairedFastqs {
-    cpus params.sortThreads
-    memory params.sortMemory
+    cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads : 0 ) }
+    memory { params.sortMemory * params.sortThreads + 50.MB }
 
     publishDir params.outputDir
 
@@ -144,8 +133,8 @@ process nameSortUnpairedFastqs {
 }
 
 process nameSortPairedFastqs {
-    cpus params.sortThreads
-    memory params.sortMemory
+    cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads * 2 : 0) }
+    memory { params.sortMemory * params.sortThreads + 200.MB }
 
     publishDir params.outputDir
 
@@ -186,7 +175,7 @@ def sortedFastqFile(String outDir, Path unsortedFastq) {
 
 
 /** Check whether parameters are correct (names and values)
- * 
+ *
  * @param parameters
  * @param allowedParameters
  */
