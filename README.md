@@ -58,6 +58,15 @@ Then to run the workflow locally with Docker you can do e.g. (this time with sor
 nextflow run bam2fastq.nf -profile test,docker -ansi-log --bamFiles=test/test1.bam,test/test2.bam --outputDir=test_out --sortFastqs=true
 ```
 
+To run the workflow with singularity:
+
+```bash
+# Convert the Docker image to Singularity
+singularity build nf-bam2fastq.sif docker-daemon://nf-bam2fastq:latest
+
+# Run with the singularity profile
+nextflow run bam2fastq.nf -profile test,singularity -ansi-log --bamFiles=test/test1.bam,test/test2.bam --outputDir=test_out --sortFastqs=true
+```
 
 ## Test Data
 
