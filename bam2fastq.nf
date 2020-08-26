@@ -18,10 +18,10 @@ params.checkIntermediateFastqMd5 = true     // While reading in intermediate (ye
 params.compressIntermediateFastqs = true    // Whether to compress intermediate (yet unsorted) FASTQs.
 params.compressor = "pigz.sh"   // Compression binary or script used for (de)compression of sorted output FASTQs. gzip, ${TOOL_PIGZ}.
 params.compressorThreads = 4    // Number of threads for compression and decompression by the sortCompressor and compressor. Used by ${TOOL_PIGZ}.
-params.sortMemory = "1g"        // Memory used for storing data while sorting. Is passed to the sorting tool and should follow its required syntax. WARNING: Also adapt the job requirements!
+params.sortMemory = 1.GB        // Memory used for storing data while sorting. Is passed to the sorting tool and should follow its required syntax. WARNING: Also adapt the job requirements!
 params.sortThreads = 4          // The number of parallel threads used for sorting."
-
 params.debug = false
+
 
 allowedParameters = ['bamFiles', 'outputDir', 'sortFastqs',
                      'compressIntermediateFastqs', 'pairedEnd',
@@ -48,9 +48,10 @@ bamFiles_ch = Channel.
 process bamToFastq {
     // Just bamtofastq
     cpus 1
-
     // The biobambam paper states something like 133 MB.
-    memory 300.MB
+    memory { 300.MB * task.attempt }
+    time { 1.hour * task.attempt }
+    maxRetries 3
 
     publishDir params.outputDir, enabled: !params.sortFastqs
 
@@ -100,8 +101,10 @@ unpairedFastqs_ch = readsFilesB_ch.flatMap {
 
 
 process nameSortUnpairedFastqs {
-    cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads : 0 ) }
-    memory { params.sortMemory * params.sortThreads + 50.MB }
+  cpus { (params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads : 0 )) * task.attempt; 1 }
+    memory { (params.sortMemory * params.sortThreads + 50.MB) * task.attempt }
+    time 1.hour
+    maxRetries 3
 
     publishDir params.outputDir
 
@@ -133,8 +136,10 @@ process nameSortUnpairedFastqs {
 }
 
 process nameSortPairedFastqs {
-    cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads * 2 : 0) }
-    memory { params.sortMemory * params.sortThreads + 200.MB }
+    cpus { (params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads * 2 : 0)) * task.attempt; 1 }
+    memory { (params.sortMemory * params.sortThreads + 200.MB) * task.attempt }
+    time 1.hour
+    maxRetries 3
 
     publishDir params.outputDir
 

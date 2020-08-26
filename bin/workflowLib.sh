@@ -116,11 +116,11 @@ setUp_BashSucksVersion() {
     unlockResource "tmpFiles"
 
     # Remove all registered temporary files upon exit
-    trap "cleanUp_BashSucksVersion; rm \"$(tmpFiles)\"; rmdir \"$(tmpDir)\"" EXIT
+    trap "cleanUp_BashSucksVersion; lockResource 'tmpFiles'; rm \"$(tmpFiles)\"; unlockResource 'tmpFiles'; rmdir \"$(tmpDir)\"" EXIT
 }
 cleanUp_BashSucksVersion() {
     lockResource "tmpFiles"
-    declare -a tmpFiles=( $(cat $(tmpFiles) | tac) )
+    declare -a tmpFiles=( $(tac $(tmpFiles)) )
     if [[ $(isDebugSet) == "false" && -v tmpFiles && ${#tmpFiles[@]} -gt 1 ]]; then
         for f in ${tmpFiles[@]}; do
             if [[ "$f" == "$ARRAY_ELEMENT_DUMMY" ]]; then
@@ -145,11 +145,11 @@ setUp() {
     unlockResource "tmpFiles"
 
      # Remove all registered temporary files upon exit
-    trap "cleanUp; rm \"$(tmpFiles)\"; rmdir \"$(tmpDir)"\" EXIT
+    trap "cleanUp; lockResource 'tmpFiles'; rm \"$(tmpFiles)\"; unlockResource 'tmpFiles; rmdir \"$(tmpDir)"\" EXIT
 }
 cleanUp() {
     lockResource "tmpFiles"
-    declare -a tmpFiles=( $(cat $(tmpFiles) | tac) )
+    declare -a tmpFiles=( $(tac $(tmpFiles)) )
     if [[ $(isDebugSet) == "false" && -v tmpFiles && ${#tmpFiles[@]} -gt 0 ]]; then
         for f in "${tmpFiles[@]}"; do
             if [[ -d "$f" ]]; then
