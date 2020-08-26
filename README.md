@@ -68,6 +68,23 @@ singularity build nf-bam2fastq.sif docker-daemon://nf-bam2fastq:latest
 nextflow run bam2fastq.nf -profile test,singularity -ansi-log --bamFiles=test/test1.bam,test/test2.bam --outputDir=test_out --sortFastqs=true
 ```
 
+## Environment and Execution
+
+Environment and execution are two relatively indepently varying parameters that you can select by choosing a profile combination:
+
+  * conda (Conda environment)
+  * docker (based on Conda environment)
+  * singularity (see above command to create this from the Docker container)
+  * dkfzModules (uses the environment modules available in the DKFZ batch processing cluster)
+  
+As executors currently only "local" and "lsf" execution available as profiles. Adapt the `nextflow.config` if you need others.
+
+For instance, if you want to run the workflow as Singularity containers in an LSF cluster you can do 
+
+```bash
+nextflow run bam2fastq.nf -profile lsf,singularity -ansi-log --bamFiles=test/test1.bam,test/test2.bam --outputDir=test_out --sortFastqs=true
+```
+
 ## Test Data
 
 The test data in the `test/` directory is from https://github.com/genome/gms/wiki/HCC1395-WGS-Exome-RNA-Seq-Data.
