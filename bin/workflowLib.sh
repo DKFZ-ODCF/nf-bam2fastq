@@ -116,7 +116,7 @@ setUp_BashSucksVersion() {
     unlockResource "tmpFiles"
 
     # Remove all registered temporary files upon exit
-    trap "cleanUp_BashSucksVersion; lockResource 'tmpFiles'; rm \"$(tmpFiles)\"; unlockResource 'tmpFiles'; rmdir \"$(tmpDir)\"" EXIT
+    trap "cleanUp_BashSucksVersion; rm \"$(tmpFiles)\"; rmdir \"$(tmpDir)\"" EXIT
 }
 cleanUp_BashSucksVersion() {
     lockResource "tmpFiles"
@@ -145,7 +145,7 @@ setUp() {
     unlockResource "tmpFiles"
 
      # Remove all registered temporary files upon exit
-    trap "cleanUp; lockResource 'tmpFiles'; rm \"$(tmpFiles)\"; unlockResource 'tmpFiles; rmdir \"$(tmpDir)"\" EXIT
+    trap "cleanUp; rm \"$(tmpFiles)\"; rmdir \"$(tmpDir)"\" EXIT
 }
 cleanUp() {
     lockResource "tmpFiles"

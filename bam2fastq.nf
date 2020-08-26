@@ -127,7 +127,7 @@ process nameSortUnpairedFastqs {
         compressor="$params.compressor" \
         compressorThreads="$params.compressorThreads" \
         sortThreads="$params.sortThreads" \
-        sortMemory="$params.sortMemory" \
+        sortMemory="${toSortMemoryString(params.sortMemory)}"	\
         fastqFile="$fastq" \
         sortedFastqFile="${sortedFastqFile(outDir, fastq)}" \
         coreutilsSortFastqSingle.sh
@@ -164,7 +164,7 @@ process nameSortPairedFastqs {
         compressor="$params.compressor" \
         compressorThreads="$params.compressorThreads" \
         sortThreads="$params.sortThreads" \
-        sortMemory="$params.sortMemory" \
+        sortMemory="${toSortMemoryString(params.sortMemory)}"	\
         fastqFile1="$fastq1" \
         fastqFile2="$fastq2" \
         sortedFastqFile1="${sortedFastqFile(outDir, fastq1)}" \
@@ -197,6 +197,35 @@ void checkParameters(parameters, List<String> allowedParameters) {
     }
 }
 
+String toSortMemoryString(MemoryUnit mem) {
+    def splitted = mem.toString().split(" ")
+    String size = splitted[0]
+    switch(splitted[1]) {
+        case "B":
+            return size + "b"
+            break
+        case "KB":
+            return size + "k"
+            break
+        case "MB":
+            return size + "m"
+            break
+        case "GB":
+            return size + "g"
+            break
+        case "PB":
+            return size + "p"
+            break
+        case "EB":
+            return size + "e"
+            break
+        case "ZB":
+            return size + "z"
+            break
+        default:
+           throw new RuntimeException("MemoryUnit produced unknown unit in '${mem.toString()}")
+    }
+}
 
 workflow.onComplete {
     log.info "Success!"
