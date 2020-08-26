@@ -18,10 +18,10 @@ params.checkIntermediateFastqMd5 = true     // While reading in intermediate (ye
 params.compressIntermediateFastqs = true    // Whether to compress intermediate (yet unsorted) FASTQs.
 params.compressor = "pigz.sh"   // Compression binary or script used for (de)compression of sorted output FASTQs. gzip, ${TOOL_PIGZ}.
 params.compressorThreads = 4    // Number of threads for compression and decompression by the sortCompressor and compressor. Used by ${TOOL_PIGZ}.
-params.sortMemory = "1g"        // Memory used for storing data while sorting. Is passed to the sorting tool and should follow its required syntax. WARNING: Also adapt the job requirements!
+params.sortMemory = 1.GB        // Memory used for storing data while sorting. Is passed to the sorting tool and should follow its required syntax. WARNING: Also adapt the job requirements!
 params.sortThreads = 4          // The number of parallel threads used for sorting."
-
 params.debug = false
+
 
 allowedParameters = ['bamFiles', 'outputDir', 'sortFastqs',
                      'compressIntermediateFastqs', 'pairedEnd',
@@ -45,23 +45,13 @@ bamFiles_ch = Channel.
         fromPath(params.bamFiles.split(',') as List<String>,
                  checkIfExists: true)
 
-
-def bamToFastqCpus(params) {
-    Double pairFactor = params.pairedEnd ? 2 : 1
-    Double unpairedFastqSummand = params.writeUnpairedFastq ? 1 : 0
-    Double checkMd5Summand = params.checkIntermediateFastqMd5 ? 1 : 0
-    Double compressIntermediate = params.compressIntermediateFastqs ? 1 : 0
-    Double compressThreadsFactor = params.compressorThreads
-    return 2
-}
-
-def bamToFastqMemory(params) {
-    return 15.GB
-}
-
 process bamToFastq {
-    cpus { bamToFastqCpus(params) }
-    memory { bamToFastqMemory(params) }
+    // Just bamtofastq
+    cpus 1
+    // The biobambam paper states something like 133 MB.
+    memory { 300.MB * task.attempt }
+    time { 1.hour * task.attempt }
+    maxRetries 3
 
     publishDir params.outputDir, enabled: !params.sortFastqs
 
@@ -111,8 +101,10 @@ unpairedFastqs_ch = readsFilesB_ch.flatMap {
 
 
 process nameSortUnpairedFastqs {
-    cpus params.sortThreads
-    memory params.sortMemory
+  cpus { (params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads : 0 )) * task.attempt; 1 }
+    memory { (params.sortMemory * params.sortThreads + 50.MB) * task.attempt }
+    time 1.hour
+    maxRetries 3
 
     publishDir params.outputDir
 
@@ -135,7 +127,7 @@ process nameSortUnpairedFastqs {
         compressor="$params.compressor" \
         compressorThreads="$params.compressorThreads" \
         sortThreads="$params.sortThreads" \
-        sortMemory="$params.sortMemory" \
+        sortMemory="${toSortMemoryString(params.sortMemory)}"	\
         fastqFile="$fastq" \
         sortedFastqFile="${sortedFastqFile(outDir, fastq)}" \
         coreutilsSortFastqSingle.sh
@@ -144,8 +136,10 @@ process nameSortUnpairedFastqs {
 }
 
 process nameSortPairedFastqs {
-    cpus params.sortThreads
-    memory params.sortMemory
+    cpus { (params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads * 2 : 0)) * task.attempt; 1 }
+    memory { (params.sortMemory * params.sortThreads + 200.MB) * task.attempt }
+    time 1.hour
+    maxRetries 3
 
     publishDir params.outputDir
 
@@ -170,7 +164,7 @@ process nameSortPairedFastqs {
         compressor="$params.compressor" \
         compressorThreads="$params.compressorThreads" \
         sortThreads="$params.sortThreads" \
-        sortMemory="$params.sortMemory" \
+        sortMemory="${toSortMemoryString(params.sortMemory)}"	\
         fastqFile1="$fastq1" \
         fastqFile2="$fastq2" \
         sortedFastqFile1="${sortedFastqFile(outDir, fastq1)}" \
@@ -186,7 +180,7 @@ def sortedFastqFile(String outDir, Path unsortedFastq) {
 
 
 /** Check whether parameters are correct (names and values)
- * 
+ *
  * @param parameters
  * @param allowedParameters
  */
@@ -203,6 +197,35 @@ void checkParameters(parameters, List<String> allowedParameters) {
     }
 }
 
+String toSortMemoryString(MemoryUnit mem) {
+    def splitted = mem.toString().split(" ")
+    String size = splitted[0]
+    switch(splitted[1]) {
+        case "B":
+            return size + "b"
+            break
+        case "KB":
+            return size + "k"
+            break
+        case "MB":
+            return size + "m"
+            break
+        case "GB":
+            return size + "g"
+            break
+        case "PB":
+            return size + "p"
+            break
+        case "EB":
+            return size + "e"
+            break
+        case "ZB":
+            return size + "z"
+            break
+        default:
+           throw new RuntimeException("MemoryUnit produced unknown unit in '${mem.toString()}")
+    }
+}
 
 workflow.onComplete {
     log.info "Success!"

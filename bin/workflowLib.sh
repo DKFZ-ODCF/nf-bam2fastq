@@ -120,7 +120,7 @@ setUp_BashSucksVersion() {
 }
 cleanUp_BashSucksVersion() {
     lockResource "tmpFiles"
-    declare -a tmpFiles=( $(cat $(tmpFiles) | tac) )
+    declare -a tmpFiles=( $(tac $(tmpFiles)) )
     if [[ $(isDebugSet) == "false" && -v tmpFiles && ${#tmpFiles[@]} -gt 1 ]]; then
         for f in ${tmpFiles[@]}; do
             if [[ "$f" == "$ARRAY_ELEMENT_DUMMY" ]]; then
@@ -149,7 +149,7 @@ setUp() {
 }
 cleanUp() {
     lockResource "tmpFiles"
-    declare -a tmpFiles=( $(cat $(tmpFiles) | tac) )
+    declare -a tmpFiles=( $(tac $(tmpFiles)) )
     if [[ $(isDebugSet) == "false" && -v tmpFiles && ${#tmpFiles[@]} -gt 0 ]]; then
         for f in "${tmpFiles[@]}"; do
             if [[ -d "$f" ]]; then
