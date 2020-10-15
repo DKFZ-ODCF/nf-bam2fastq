@@ -40,7 +40,12 @@ Provided you have a working Conda installation and two test BAM files you can ru
 
 ```bash
 mkdir test_out/
-nextflow run bam2fastq.nf -profile test,conda -ansi-log --bamFileList=test/test.bam --outputDir=test_out --sortFastqs=false
+nextflow run bam2fastq.nf \
+    -profile test,conda \
+    -ansi-log \
+    --bamFileList=test/test.bam \
+    --outputDir=test_out \
+    --sortFastqs=false
 ```
 
 For each BAM file in the comma-separated `--bamFileList` parameter, one directory with FASTQs is created in the `outputDir`. With the `test` profile use only small BAM files. The `conda` profile defines a Conda environment from the `./task-environment.yml` file, which Nextflow will by default automatically set up in the `work` directory.
@@ -49,13 +54,24 @@ There is also a dockerized version. You can build the container with
 
 ```bash
 cd nf-bam2fastq
-docker build --rm --build-arg http_proxy=$HTTP_PROXY --build-arg https_proxy=$HTTPS_PROXY -t nf-bam2fastq ./
+docker build \
+    --rm \
+    --build-arg http_proxy=$HTTP_PROXY \
+    --build-arg https_proxy=$HTTPS_PROXY \
+    -t \
+    nf-bam2fastq \
+    ./
 ```
 
 Then to run the workflow locally with Docker you can do e.g. (this time with sorting the FASTQs)
 
 ```bash
-nextflow run bam2fastq.nf -profile test,docker -ansi-log --bamFiles=test/test1.bam,test/test2.bam --outputDir=test_out --sortFastqs=true
+nextflow run bam2fastq.nf \
+    -profile test,docker \
+    -ansi-log \
+    --bamFiles=test/test1.bam,test/test2.bam \
+    --outputDir=test_out \
+    --sortFastqs=true
 ```
 
 To run the workflow with singularity:
@@ -65,7 +81,12 @@ To run the workflow with singularity:
 singularity build nf-bam2fastq.sif docker-daemon://nf-bam2fastq:latest
 
 # Run with the singularity profile
-nextflow run bam2fastq.nf -profile test,singularity -ansi-log --bamFiles=test/test1.bam,test/test2.bam --outputDir=test_out --sortFastqs=true
+nextflow run bam2fastq.nf \
+    -profile test,singularity \
+    -ansi-log \
+    --bamFiles=test/test1.bam,test/test2.bam \
+    --outputDir=test_out \
+    --sortFastqs=true
 ```
 
 ## Environment and Execution
@@ -82,7 +103,12 @@ As executors currently only "local" and "lsf" execution available as profiles. A
 For instance, if you want to run the workflow as Singularity containers in an LSF cluster you can do 
 
 ```bash
-nextflow run bam2fastq.nf -profile lsf,singularity -ansi-log --bamFiles=test/test1.bam,test/test2.bam --outputDir=test_out --sortFastqs=true
+nextflow run bam2fastq.nf \
+    -profile lsf,singularity \
+    -ansi-log \
+    --bamFiles=test/test1.bam,test/test2.bam \
+    --outputDir=test_out \
+    --sortFastqs=true
 ```
 
 ## Test Data
