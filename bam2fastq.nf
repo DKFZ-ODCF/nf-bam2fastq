@@ -15,9 +15,6 @@ params.outputDir
 /** Whether to sort the output FASTQs. */
 params.sortFastqs = true
 
-/** Whether the BAM files contain paired-end reads. */
-params.pairedEnd = true
-
 /** Write a file with unpaired reads. */
 params.writeUnpairedFastq = false
 
@@ -56,7 +53,7 @@ params.debug = false
 
 allowedParameters = ['bamFiles', 'outputDir',
                      'sortFastqs', 'sortMemory', 'sortThreads',
-                     'pairedEnd', 'writeUnpairedFastq',
+                     'writeUnpairedFastq',
                      'compressIntermediateFastqs', 'compressorThreads',
                      'excludedFlags', 'checkIntermediateFastqMd5',
                      'debug']
@@ -115,8 +112,7 @@ process bamToFastq {
 
     shell:
     """
-    pairedEnd="$params.pairedEnd" \
-        writeUnpairedFastq="$params.writeUnpairedFastq" \
+    writeUnpairedFastq="$params.writeUnpairedFastq" \
         excludedFlags="(${params.excludedFlags.split(",").join(" ")})" \
         compressor="$compressor" \
         compressorThreads="$params.compressorThreads" \

@@ -95,24 +95,6 @@ processPairedEndWithReadGroups() {
 }
 
 
-# Compose a "-F $flags" string to be used for excluding reads by samtools.
-samtoolsExclusions() {
-    declare -la excludedFlagsArray=("${excludedFlags[@]:-}")
-    checkExclusions "${excludedFlagsArray[@]}"
-    local exclusionFlag=0
-    local exclusionsString=$(stringJoin "," $(toLower "${excludedFlagsArray[@]}"))
-    if (echo "$exclusionsString" | grep -wq "supplementary"); then
-        let exclusionFlag=($exclusionFlag + 2048)
-    fi
-    if (echo "$exclusionsString" | grep -wq "secondary"); then
-        let exclusionFlag=($exclusionFlag + 256)
-    fi
-    if [[ $exclusionFlag -gt 0 ]]; then
-        echo "-F $exclusionFlag"
-    fi
-}
-
-
 ensureAllFiles() {
     declare -a files=( "$@" )
     for f in "${files[@]}"; do
@@ -136,14 +118,8 @@ main() {
     declare -ax readGroups=( $(getReadGroups "$bamFile") )
     declare -ax unsortedFastqs=( $(composeFastqFiles "$outputDir" "$FASTQ_SUFFIX" "${readGroups[@]}") )
 
-    if [[ "${pairedEnd:-true}" == true ]]; then
-        processPairedEndWithReadGroups
-        ensureAllFiles "${unsortedFastqs[@]}"
-    else
-        # TODO Test single end with biobambam
-        echo "Single-end not tested" >> /dev/stderr
-        exit 1
-    fi
+    processPairedEndWithReadGroups
+    ensureAllFiles "${unsortedFastqs[@]}"
 }
 
 
