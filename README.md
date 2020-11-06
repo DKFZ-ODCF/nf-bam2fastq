@@ -97,7 +97,7 @@ nextflow run bam2fastq.nf \
 
 ## Environment and Execution
 
-[Nextflow](https://www.nextflow.io/docs/latest/config.html#config-profiles)'s `-profile` parameter allows settinng technical options for executing the workflow. You have already seen some of the profiles and that these can be combined. We conceptually separated the predefined profiles into two types, those concerning the "environment" and those for selecting the "executor".
+[Nextflow](https://www.nextflow.io/docs/latest/config.html#config-profiles)'s `-profile` parameter allows setting technical options for executing the workflow. You have already seen some of the profiles and that these can be combined. We conceptually separated the predefined profiles into two types, those concerning the "environment" and those for selecting the "executor".
 
 The following "environment" profiles that define which environment will be used for executing the jobs are predefined in the `nextflow.config`:
   * conda
