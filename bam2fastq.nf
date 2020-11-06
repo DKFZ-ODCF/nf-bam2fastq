@@ -1,36 +1,85 @@
 /**
+ *  Copyright (c) 2020 DKFZ.
+ *
+ *  Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/LICENSE.txt).
+ *
  *  Author: Philip R. Kensche
  */
 
-/** TODO
- *  - test data to NF
- *  - create container
- *  - run singularity container on LSF cluster
- */
+/** Comma-separated list of input BAMs */
+params.bamFiles
 
-params.bamFiles                    // Comma-separated list of input BAMs
-params.outputDir                   // Path to which data should be written. One subdirectory per input BAM.
-params.sortFastqs = true           // Whether to sort the output FASTQs.
-params.pairedEnd = true            // Whether the BAM files contain paired-end reads.
-params.writeUnpairedFastq = false  // Write a file with unpaired reads.
-params.excludedFlags = "secondary,supplementary"   // Alignments with these flags are excluded. Comma delimited list (interpreted as bash array) of the following values: secondary, supplementary.
-params.checkIntermediateFastqMd5 = true     // While reading in intermediate (yet unsorted) FASTQs, check that the MD5 is the same as in the accompanied '.md5' file. Only available for Picard, as Biobambam does not produce MD5 files for output files.
-params.compressIntermediateFastqs = true    // Whether to compress intermediate (yet unsorted) FASTQs.
-params.compressor = "pigz.sh"   // Compression binary or script used for (de)compression of sorted output FASTQs. gzip, ${TOOL_PIGZ}.
-params.compressorThreads = 4    // Number of threads for compression and decompression by the sortCompressor and compressor. Used by ${TOOL_PIGZ}.
-params.sortMemory = 1.GB        // Memory used for storing data while sorting. Is passed to the sorting tool and should follow its required syntax. WARNING: Also adapt the job requirements!
-params.sortThreads = 4          // The number of parallel threads used for sorting."
+/** Path to which data should be written. One subdirectory per input BAM. */
+params.outputDir
+
+/** Whether to sort the output FASTQs. */
+params.sortFastqs = true
+
+/** Whether the BAM files contain paired-end reads. */
+params.pairedEnd = true
+
+/** Write a file with unpaired reads. */
+params.writeUnpairedFastq = false
+
+/** Alignments with these flags are excluded. Comma delimited list (interpreted as bash array) of the following values:
+ *  secondary, supplementary. */
+params.excludedFlags = "secondary,supplementary"
+
+/** While reading in intermediate (yet unsorted) FASTQs, check that the MD5 is the same as in the accompanied '.md5'
+ *  file. Only available for Picard, as Biobambam does not produce MD5 files for output files. */
+params.checkIntermediateFastqMd5 = true
+
+/** Whether to compress intermediate (yet unsorted) FASTQs. Applies only when sortFastqs = true.
+ *  Note that the final FASTQs are always compressed. */
+params.compressIntermediateFastqs = true
+
+/** Compression binary or script used for (de)compression of sorted output FASTQs. gzip, ${TOOL_PIGZ}.
+ *  API for $compressor:
+ *      * $compressor < uncompressed > compressed
+ *      * $compressor -d < compressed > uncompressed
+ *      * compressorThreads=$threads $compressor # change number of threads
+ */
+String compressor = "pigz.sh"
+params.compressorThreads = 4
+
+/** Memory used for storing data while sorting. Is passed to the sorting tool and should follow its required syntax.
+ *  WARNING: Also adapt the job requirements! */
+params.sortMemory = 1.GB
+
+/** The number of parallel threads used for sorting. */
+params.sortThreads = 4
+
+/** Produce more output for debugging. */
 params.debug = false
 
 
-allowedParameters = ['bamFiles', 'outputDir', 'sortFastqs',
-                     'compressIntermediateFastqs', 'pairedEnd',
-                     'writeUnpairedFastq',
-                     'excludedFlags', 'checkIntermediateFastqMd5', 'compressIntermediateFastqs',
-                     'compressor', 'compressorThreads', 'sortMemory', 'sortThreads',
+
+allowedParameters = ['bamFiles', 'outputDir',
+                     'sortFastqs', 'sortMemory', 'sortThreads',
+                     'pairedEnd', 'writeUnpairedFastq',
+                     'compressIntermediateFastqs', 'compressorThreads',
+                     'excludedFlags', 'checkIntermediateFastqMd5',
                      'debug']
 
 checkParameters(params, allowedParameters)
+
+
+def fastqSuffix(Boolean compressed) {
+    if (compressed)
+        return "fastq.gz"
+    else
+        return "fastq"
+}
+
+
+def sortedFastqFile(String outDir, Path unsortedFastq, Boolean compressed) {
+    String result = outDir + "/" + unsortedFastq.getFileName().toString().replaceFirst(/\.fastq(?:\.gz)?$/, ".sorted.fastq")
+    if (compressed)
+        return result + ".gz"
+    else
+        return result
+}
+
 
 log.info """
 ==================================
@@ -44,6 +93,9 @@ ${allowedParameters.collect { "$it = ${params.get(it)}" }.join("\n")}
 bamFiles_ch = Channel.
         fromPath(params.bamFiles.split(',') as List<String>,
                  checkIfExists: true)
+
+
+Boolean compressBamToFastqOutput = params.sortFastqs ? params.compressIntermediateFastqs : true
 
 process bamToFastq {
     // Just bamtofastq
@@ -59,7 +111,7 @@ process bamToFastq {
         file bamFile from bamFiles_ch
 
     output:
-        tuple file(bamFile), file("**/*.fastq.gz") into readsFiles_ch
+        tuple file(bamFile), file("**/*.${fastqSuffix(compressBamToFastqOutput)}") into readsFiles_ch
 
     shell:
     """
@@ -67,9 +119,9 @@ process bamToFastq {
         pairedEnd="$params.pairedEnd" \
         writeUnpairedFastq="$params.writeUnpairedFastq" \
         excludedFlags="(${params.excludedFlags.split(",").join(" ")})" \
-        compressor="$params.compressor" \
+        compressor="$compressor" \
         compressorThreads="$params.compressorThreads" \
-        compressFastqs="${params.compressIntermediateFastqs || (!params.sortFastqs && params.compressFastqs)}" \
+        compressFastqs="$compressBamToFastqOutput" \
         bamFile="$bamFile" \
         outputPerReadGroup="true" \
         converter="biobambam" \
@@ -80,11 +132,11 @@ process bamToFastq {
 }
 
 // Create two channels of matched paired-end and unmatched or single-end reads, each of tuples of (bam, fastq).
-readsFiles_ch.into { readsFilesA_ch; readsFilesB_ch}
+readsFiles_ch.into { readsFilesA_ch; readsFilesB_ch }
 pairedFastqs_ch = readsFilesA_ch.flatMap {
     def (bam, fastqs) = it
-    fastqs.grep { it.getFileName() =~ /.+_R[12]\.fastq(?:\.[^.]*)$/ }.
-            groupBy { fastq -> fastq.getFileName().toString().replaceFirst("_R[12].fastq.gz\$", "") }.
+    fastqs.grep { it.getFileName() =~ /.+_R[12]\.fastq(?:\.[^.]*)?$/ }.
+            groupBy { fastq -> fastq.getFileName().toString().replaceFirst("_R[12].fastq(?:.gz)?\$", "") }.
             collect { key, files ->
                 assert files.size() == 2
                 files.sort()
@@ -92,10 +144,11 @@ pairedFastqs_ch = readsFilesA_ch.flatMap {
             }
 }
 
+
 unpairedFastqs_ch = readsFilesB_ch.flatMap {
     def (bam, fastqs) = it
     fastqs.
-            grep { it.getFileName() =~ /.+_(U[12]|S)\.fastq(?:\.[^.]*)$/ }.
+            grep { it.getFileName() =~ /.+_(U[12]|S)\.fastq(?:\.[^.]*)?$/ }.
             collect { [bam, it] }
 }
 
@@ -115,25 +168,26 @@ process nameSortUnpairedFastqs {
         tuple file(bam), file(fastq) from unpairedFastqs_ch
 
     output:
-        tuple file(bam), file("**/*.sorted.fastq.gz") into sortedUnpairedFastqs_ch
+        tuple file(bam), file(sortedFastqFile) into sortedUnpairedFastqs_ch
 
     script:
     bamFileName = bam.getFileName().toString()
     outDir = "${bamFileName}_sorted_fastqs"
+    sortedFastqFile = sortedFastqFile(outDir, fastq, true)
     """
     mkdir -p "$outDir"
-    compressedInputFastqs="$params.compressIntermediateFastqs" \
-        converter="biobambam" \
-        compressor="$params.compressor" \
+    compressedInputFastqs="$compressBamToFastqOutput" \
+        compressor="$compressor" \
         compressorThreads="$params.compressorThreads" \
         sortThreads="$params.sortThreads" \
         sortMemory="${toSortMemoryString(params.sortMemory)}"	\
         fastqFile="$fastq" \
-        sortedFastqFile="${sortedFastqFile(outDir, fastq)}" \
+        sortedFastqFile="$sortedFastqFile" \
         coreutilsSortFastqSingle.sh
     """
 
 }
+
 
 process nameSortPairedFastqs {
     cpus { (params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads * 2 : 0)) * task.attempt; 1 }
@@ -155,27 +209,22 @@ process nameSortPairedFastqs {
     script:
     bamFileName = bam.getFileName().toString()
     outDir = "${bamFileName}_sorted_fastqs"
-    sortedFastqFile1 = outDir + "/" + fastq1.getFileName().toString().replaceFirst(/\.fastq\.gz$/, ".sorted.fastq.gz")
-    sortedFastqFile2 = outDir + "/" + fastq2.getFileName().toString().replaceFirst(/\.fastq\.gz$/, ".sorted.fastq.gz")
+    sortedFastqFile1 = sortedFastqFile(outDir, fastq1, true)
+    sortedFastqFile2 = sortedFastqFile(outDir, fastq2, true)
     """
     mkdir -p "$outDir"
-    compressedInputFastqs="$params.compressIntermediateFastqs" \
-        converter="biobambam" \
-        compressor="$params.compressor" \
+    compressedInputFastqs="$compressBamToFastqOutput" \
+        compressor="$compressor" \
         compressorThreads="$params.compressorThreads" \
         sortThreads="$params.sortThreads" \
         sortMemory="${toSortMemoryString(params.sortMemory)}"	\
         fastqFile1="$fastq1" \
         fastqFile2="$fastq2" \
-        sortedFastqFile1="${sortedFastqFile(outDir, fastq1)}" \
-        sortedFastqFile2="${sortedFastqFile(outDir, fastq2)}" \
+        sortedFastqFile1="$sortedFastqFile1" \
+        sortedFastqFile2="$sortedFastqFile2" \
         coreutilsSortFastqPair.sh
     """
 
-}
-
-def sortedFastqFile(String outDir, Path unsortedFastq) {
-    outDir + "/" + unsortedFastq.getFileName().toString().replaceFirst(/\.fastq\.gz$/, ".sorted.fastq.gz")
 }
 
 
@@ -196,6 +245,7 @@ void checkParameters(parameters, List<String> allowedParameters) {
         exit(1)
     }
 }
+
 
 String toSortMemoryString(MemoryUnit mem) {
     def splitted = mem.toString().split(" ")
@@ -226,6 +276,7 @@ String toSortMemoryString(MemoryUnit mem) {
            throw new RuntimeException("MemoryUnit produced unknown unit in '${mem.toString()}")
     }
 }
+
 
 workflow.onComplete {
     log.info "Success!"

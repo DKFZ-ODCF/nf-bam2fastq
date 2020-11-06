@@ -71,7 +71,7 @@ sortFastqPair() {
     registerTmpFile "$sortTmp"
     registerTmpFile "$sortTmp/*"
 
-    ## TODO Check here that the two files have the some order (just check the two ID columns 1 == 5)
+    ## TODO Check here that the two files have the same order (just check the two ID columns 1 == 5)
     local sortPid
     paste "$linear1Fifo" "$linear2Fifo" \
         | sortLinearizedFastqStream "$sortTmp" \
@@ -138,7 +138,7 @@ sortFastqPairWithMd5Check() {
 
 setUp_BashSucksVersion
 
-if [[ "${checkFastqMd5:-false}" == true && "${converter:-biobambam}" == "picard" ]]; then
+if [[ "${checkFastqMd5:-false}" == true ]]; then
     sortFastqPairWithMd5Check "$fastqFile1" "$fastqFile2" "$sortedFastqFile1" "$sortedFastqFile2" & \
       sortPid=$!
 else

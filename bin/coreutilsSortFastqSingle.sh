@@ -7,11 +7,11 @@
 
 # fastqFile: Path of the input FASTQ to process.
 # sortedFastqFile: Path of the unsorted output FASTQ.
-# checkFastqMd5: Create MD5 file of output FASTQs
-
-
-## NOTE: Single-end reads may also occur in an otherwise paired-end bam and are produced by bam2fastq if
-##       unpairedReads=true.
+# checkFastqMd5: Create MD5 file of output FASTQs. true/false. Default: false
+# compressor: An executable with the interface:
+#             * "$compressor < uncompressed > compressed"
+#             * "$compressor -d < compressed > uncompressed"
+# compressIntermediateFastqs: true/false. Default: true. $compressor is used for decompression.
 
 source $(dirname $(readlink -f "$0"))/"workflowLib.sh"
 
@@ -60,7 +60,7 @@ sortFastqWithMd5Check() {
 
 setUp_BashSucksVersion
 
-if [[ "${checkFastqMd5:-false}" == true && "${converter:-biobambam}" == "picard" ]]; then
+if [[ "${checkFastqMd5:-false}" == true ]]; then
     sortFastqWithMd5Check "$fastqFile" "$sortedFastqFile" \
       & sortPid=$!
 else
