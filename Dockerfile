@@ -4,6 +4,11 @@ LABEL maintainer="Philip R. Kensche <p.kensche@dkfz.de>"
 
 SHELL ["/bin/bash", "-c"]
 
+# ps is needed for collecting runtime information from the container
+RUN apt update && \
+    apt-get install -y procps && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY task-environment.yml ./
 
 RUN conda init bash && \

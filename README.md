@@ -47,10 +47,8 @@ Please have a look at the [project board](projects/1) for further information.
   * Trading memory vs. IO
     * `sortMemory`: Memory used for sorting. Too large values are useless, unless you have enough memory to sort completely in-memory. Default: 100 MB.
     * `sortThreads`: Number of threads used for sorting. Default: 4.
-    * `compressFastqs`: Whether to compress final FASTQs, either produced by `bamtofastq` or the sorting, dependent on whether `sortFastqs` is set.
     * `compressIntermediateFastqs`: Whether to compress FASTQs produced by `bamtofastq` when doing subsequent sorting. Default: true. This is only relevant if `sortFastq=true`.
-    * `compressor`: GZip tool to use. By default the script `bin/pigz.sh` is used. The tool needs to (1) compress by default, (2) accept a `-d` option to switch to decompression, and (3) work on standard-input and -output.
-    * `compressorThreads`: pigz can use multiple threads for compression. Default: 4
+    * `compressorThreads`: The compressor (pigz) can use multiple threads for compression. Default: 4
 
 ## More Examples
 

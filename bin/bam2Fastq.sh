@@ -11,7 +11,7 @@
 #   input BAM file
 #
 # compressFastqs:
-#   Temporary files during sorting are compressed or not (gz), default: true
+#   Output files are compressed or not (gz), default: true
 #
 # excludedFlags:
 #   space delimited list flags for reads to exclude during processing of: secondary, supplementary
@@ -30,11 +30,10 @@ set -uvex
 
 getFastqSuffix() {
     if [[ "$compressFastqs" == true ]]; then
-        compressionSuffix=".gz"
+        echo "fastq.gz"
     else
-        compressionSuffix=""
+        echo "fastq"
     fi
-    echo "fastq${compressionSuffix}"
 }
 
 fastqForGroupIndex() {
