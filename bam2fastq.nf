@@ -115,15 +115,13 @@ process bamToFastq {
 
     shell:
     """
-    PICARD_OPTIONS="VALIDATION_STRINGENCY=SILENT CREATE_MD5_FILE=${params.checkIntermediateFastqMd5} USE_JDK_DEFLATER=true USE_JDK_INFLATER=true" \
-        pairedEnd="$params.pairedEnd" \
+    pairedEnd="$params.pairedEnd" \
         writeUnpairedFastq="$params.writeUnpairedFastq" \
         excludedFlags="(${params.excludedFlags.split(",").join(" ")})" \
         compressor="$compressor" \
         compressorThreads="$params.compressorThreads" \
         compressFastqs="$compressBamToFastqOutput" \
         bamFile="$bamFile" \
-        outputPerReadGroup="true" \
         converter="biobambam" \
         outputDir="${bamFile}_fastqs" \
         bam2Fastq.sh
