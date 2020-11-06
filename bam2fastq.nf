@@ -69,7 +69,7 @@ process bamToFastq {
         excludedFlags="(${params.excludedFlags.split(",").join(" ")})" \
         compressor="$params.compressor" \
         compressorThreads="$params.compressorThreads" \
-        compressFastqs="${params.sortFastqs ? params.compressFastqs : params.compressIntermediateFastqs}" \
+        compressFastqs="${params.compressIntermediateFastqs || (!params.sortFastqs && params.compressFastqs)}" \
         bamFile="$bamFile" \
         outputPerReadGroup="true" \
         converter="biobambam" \
