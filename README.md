@@ -1,3 +1,5 @@
+[![Build Status - Travis](https://travis-ci.org/DKFZ-ODCF/nf-bamtofastq.svg?branch=master)](https://travis-ci.org/DKFZ-ODCF/nf-bamtofastq)
+
 # BamToFastq Nexflow Workflow
 
 Convert BAM files back to FASTQ.
@@ -139,6 +141,18 @@ Please refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest
 ## Origins
 
 The workflow is a port of the Roddy-based [https://github.com/TheRoddyWMS/BamToFastqPlugin](BamToFastqPlugin). Compared to the Roddy-workflow, some problems with the execution of parallel processing, resulting in potential errors, have been fixed.
+
+## Development
+
+The integration tests can be run with
+
+```bash
+test/test1.sh test-results/
+```
+
+This will create a test environment with `nextflow` it `test-results/test-environment` and run the tests.
+
+The integration tests are also run in Travis CI.
 
 ## License & Contributors
 
