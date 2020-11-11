@@ -67,8 +67,11 @@ bamtofastqExclusions() {
 }
 
 processPairedEndWithReadGroups() {
-    ## Only process the non-supplementary (-F 0x800), primary (-F 0x100) alignments. BWA flags chimeric alignments as supplementary while the
-    ## full-length reads are exactly the ones not flagged supplementary. See http://seqanswers.com/forums/showthread.php?t=40239
+    local bamFile="${1:?No BAM file given}"
+    local outputDir="${2:?No outputDir given}"
+    ## BWA flags chimeric alignments as supplementary while the full-length reads are the ones not flagged
+    ## supplementary (http://seqanswers.com/forums/showthread.php?t=40239). To get the full set of reads back from a
+    ## (complete) BWA use only non-supplementary (-F 0x800) and primary (-F 0x100) alignments.
     ##
     ## Biobambam bamtofastq (2.0.87)
     ##
@@ -76,9 +79,10 @@ processPairedEndWithReadGroups() {
     ## * requires collation to produce files split by read-groups
     ##
     mkdir -p "$outputDir"
+    local tempFile="$outputDir/"$(basename ""$bamFile"")".bamtofastq_tmp"
     $BIOBAMBAM_BAM2FASTQ_BINARY \
         filename="$bamFile" \
-        T="$bamFile.bamtofastq_tmp" \
+        T="$tempFile" \
         outputperreadgroup=1 \
         outputperreadgrouprgsm=0 \
         outputdir="$outputDir/" \
@@ -110,15 +114,15 @@ main() {
 
     outputDir=${outputDir:-$(basename "$bamFile")"_fastqs"}
 
-    # Re-Array the filenames variable (outputs). Bash does not transfer arrays properly to subprocesses. Therefore Roddy encodes arrays as strings
-    # with enclosing parens. That is "(a b c)", with spaces as separators.
+    # Re-Array the filenames variable (outputs). Bash <= 4 does not transfer arrays properly to subprocesses. Therefore
+    # we encode arrays as strings with enclosing parens. That is "(a b c)", with spaces as separators.
     declare -ax excludedFlags=${excludedFlags}
 
     FASTQ_SUFFIX=$(getFastqSuffix)
     declare -ax readGroups=( $(getReadGroups "$bamFile") )
     declare -ax unsortedFastqs=( $(composeFastqFiles "$outputDir" "$FASTQ_SUFFIX" "${readGroups[@]}") )
 
-    processPairedEndWithReadGroups
+    processPairedEndWithReadGroups "$bamFile" "$outputDir"
     ensureAllFiles "${unsortedFastqs[@]}"
 }
 
