@@ -23,14 +23,29 @@ readsInOutputDir() {
     | wc -l
 }
 
+TEST_TOTAL=0
+TEST_ERRORS=0
+
 assertThat() {
   local first="${1:?No first number given}"
   local second="${2:?No second number given}"
   local message="${3:?No message given}"
+  let TEST_TOTAL=($TEST_TOTAL + 1)
   if [[ "$first" == "$second" ]]; then
     echo "Success: $message: $first == $second" >> /dev/stderr
   else
     echo "Failure: $message: $first != $second" >> /dev/stderr
+    let TEST_ERRORS=($TEST_ERRORS + 1)
+  fi
+}
+
+testFinish() {
+  echo "" >> /dev/stderr
+  echo "$TEST_ERRORS of $TEST_TOTAL tests failed." >> /dev/stderr
+  if [[ $TEST_ERRORS > 0 ]]; then
+    exit 1
+  else
+    exit 0
   fi
 }
 
@@ -68,3 +83,5 @@ assertThat "$(readsInBam "$workflowDir/test/test1_paired.bam")" "$(readsInOutput
 assertThat "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" "$(readsInOutputDir "$outDir/test1_unpaired.bam_sorted_fastqs")" \
   "Sorted output FASTQs have correct number of non-supplementary and non-secondary reads for single-end input bam"
 
+
+testFinish
