@@ -5,59 +5,66 @@
 #
 
 set -ue
-shopt -p pipefail
+set -o pipefail
 
 outDir="${1:?No outDir set}"
-workflowDir="${2:-./}"
+workflowDir=$(readlink -f "${2:-./}")
 
 readsInBam() {
   local bamFile="${1:?No BAM file given}"
   # Exclude supplementary and secondary alignments.
-  samtools view -c -f 2304 "$bamFile"
+  samtools view -c -F 2304 "$bamFile"
 }
 
 readsInOutputDir() {
   local outputDir="${1:?No outputDir given}"
-  for i in $(readlink -f test_out/test1_paired*/*); do
-    zcat "$i" |
-      paste - - - - |
-      wc -l
-  done |
-    perl -e 'BEGIN { my $sum = 0; } while ($line = <>) { chomp $line; $sum += $line; }; END { print $sum . "\n"; }'
+  zcat --quiet "$outputDir"/* \
+    | paste - - - - \
+    | wc -l
 }
 
 assertThat() {
   local first="${1:?No first number given}"
   local second="${2:?No second number given}"
-  local message="${3:-"Numbers don't match"}"
-  if [[ $first == $second ]]; then
-    echo "Failed: $message: $first != $second" >> /dev/stderr
-    exit 1
+  local message="${3:?No message given}"
+  if [[ "$first" == "$second" ]]; then
+    echo "Success: $message: $first == $second" >> /dev/stderr
   else
-    echo "Success: $message"
+    echo "Failure: $message: $first != $second" >> /dev/stderr
   fi
 }
 
+# Setup the environments (nextflow, samtools).
 mkdir -p "$outDir"
+if [[ ! -d "$outDir/test-environment" ]]; then
+  conda env create -f "$workflowDir/test-environment.yml" -p "$outDir/test-environment"
+fi
+set +ue
+source "$CONDA_PREFIX/bin/activate" "$outDir/test-environment"
+set -ue
 
+# Run the tests.
 nextflow run "$workflowDir/bam2fastq.nf" \
   -profile test,conda \
   -ansi-log \
+  -resume \
   --bamFiles="$workflowDir/test/test1_paired.bam,$workflowDir/test/test1_unpaired.bam" \
   --outputDir="$outDir" \
   --sortFastqs=false
-assertThat $(readsInBam "$workflowDir/test/test1_paired.bam") $(readsInOutputDir "$outDir/test1_paired.bam.../") \
-  "Unsorted output FASTQs have same number of non-supplementary and non-secondary reads as paired-end input bam."
-assertThat $(readsInBam "$workflowDir/test/test1_unpaired.bam") $(readsInOutputDir "$outDir/test1_unpaired.bam.../") \
-  "Unsorted output FASTQs have same number of non-supplementary and non-secondary reads as single-end input bam."
+assertThat "$(readsInBam "$workflowDir/test/test1_paired.bam")" "$(readsInOutputDir "$outDir/test1_paired.bam_fastqs")" \
+  "Unsorted output FASTQs have correct number of non-supplementary and non-secondary reads for paired-end input bam"
+assertThat "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" "$(readsInOutputDir "$outDir/test1_unpaired.bam_fastqs")" \
+  "Unsorted output FASTQs have correct number of non-supplementary and non-secondary reads for single-end input bam"
 
 nextflow run "$workflowDir/bam2fastq.nf" \
   -profile test,conda \
   -ansi-log \
+  -resume \
   --bamFiles="$workflowDir/test/test1_paired.bam,$workflowDir/test/test1_unpaired.bam" \
   --outputDir="$outDir" \
   --sortFastqs=true
-assertThat $(readsInBam "$workflowDir/test/test1_paired.bam") $(readsInOutputDir "$outDir/test1_paired.bam.sorted.../") \
-  "Sorted output FASTQs have same number of non-supplementary and non-secondary reads as paired-end input bam."
-assertThat $(readsInBam "$workflowDir/test/test1_unpaired.bam") $(readsInOutputDir "$outDir/test1_unpaired.bam.sorted.../") \
-  "Sorted output FASTQs have same number of non-supplementary and non-secondary reads as single-end input bam."
+assertThat "$(readsInBam "$workflowDir/test/test1_paired.bam")" "$(readsInOutputDir "$outDir/test1_paired.bam_sorted_fastqs")" \
+  "Sorted output FASTQs have correct number of non-supplementary and non-secondary reads for paired-end input bam"
+assertThat "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" "$(readsInOutputDir "$outDir/test1_unpaired.bam_sorted_fastqs")" \
+  "Sorted output FASTQs have correct number of non-supplementary and non-secondary reads for single-end input bam"
+
