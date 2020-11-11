@@ -18,9 +18,9 @@ readsInBam() {
 
 readsInOutputDir() {
   local outputDir="${1:?No outputDir given}"
-  zcat --quiet "$outputDir"/* \
-    | paste - - - - \
-    | wc -l
+  zcat --quiet "$outputDir"/* |
+    paste - - - - |
+    wc -l
 }
 
 TEST_TOTAL=0
@@ -32,16 +32,16 @@ assertThat() {
   local message="${3:?No message given}"
   let TEST_TOTAL=($TEST_TOTAL + 1)
   if [[ "$first" == "$second" ]]; then
-    echo "Success: $message: $first == $second" >> /dev/stderr
+    echo "Success: $message: $first == $second" >>/dev/stderr
   else
-    echo "Failure: $message: $first != $second" >> /dev/stderr
+    echo "Failure: $message: $first != $second" >>/dev/stderr
     let TEST_ERRORS=($TEST_ERRORS + 1)
   fi
 }
 
-testFinish() {
-  echo "" >> /dev/stderr
-  echo "$TEST_ERRORS of $TEST_TOTAL tests failed." >> /dev/stderr
+testFinished() {
+  echo "" >>/dev/stderr
+  echo "$TEST_ERRORS of $TEST_TOTAL tests failed." >>/dev/stderr
   if [[ $TEST_ERRORS > 0 ]]; then
     exit 1
   else
@@ -55,7 +55,7 @@ if [[ ! -d "$outDir/test-environment" ]]; then
   conda env create -f "$workflowDir/test-environment.yml" -p "$outDir/test-environment"
 fi
 set +ue
-source "$CONDA_PREFIX/bin/activate" "$outDir/test-environment"
+source activate "$outDir/test-environment"
 set -ue
 
 # Run the tests.
@@ -83,5 +83,4 @@ assertThat "$(readsInBam "$workflowDir/test/test1_paired.bam")" "$(readsInOutput
 assertThat "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" "$(readsInOutputDir "$outDir/test1_unpaired.bam_sorted_fastqs")" \
   "Sorted output FASTQs have correct number of non-supplementary and non-secondary reads for single-end input bam"
 
-
-testFinish
+testFinished
