@@ -8,7 +8,9 @@ set -ue
 set -o pipefail
 
 outDir="${1:?No outDir set}"
-workflowDir=$(readlink -f "${2:-./}")
+environmentDir="${2:-"$outDir/test-environment"}"
+
+workflowDir="$(readlink -f $(readlink -f $(dirname "$BASH_SOURCE")"/.."))"
 
 readsInBam() {
   local bamFile="${1:?No BAM file given}"
@@ -51,11 +53,11 @@ testFinished() {
 
 # Setup the environments (nextflow, samtools).
 mkdir -p "$outDir"
-if [[ ! -d "$outDir/test-environment" ]]; then
-  conda env create -f "$workflowDir/test-environment.yml" -p "$outDir/test-environment"
+if [[ ! -d "$environmentDir" ]]; then
+  conda env create -f "$workflowDir/test-environment.yml" -p "$environmentDir"
 fi
 set +ue
-source activate "$outDir/test-environment"
+source activate "$environmentDir"
 set -ue
 
 # Run the tests.
@@ -67,9 +69,9 @@ nextflow run "$workflowDir/bam2fastq.nf" \
   --outputDir="$outDir" \
   --sortFastqs=false
 assertThat "$(readsInBam "$workflowDir/test/test1_paired.bam")" "$(readsInOutputDir "$outDir/test1_paired.bam_fastqs")" \
-  "Unsorted output FASTQs have correct number of non-supplementary and non-secondary reads for paired-end input bam"
+  "Read number in unsorted output FASTQs on paired-end input bam"
 assertThat "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" "$(readsInOutputDir "$outDir/test1_unpaired.bam_fastqs")" \
-  "Unsorted output FASTQs have correct number of non-supplementary and non-secondary reads for single-end input bam"
+  "Read number in unsorted output FASTQs on single-end input bam"
 
 nextflow run "$workflowDir/bam2fastq.nf" \
   -profile test,conda \
@@ -79,8 +81,8 @@ nextflow run "$workflowDir/bam2fastq.nf" \
   --outputDir="$outDir" \
   --sortFastqs=true
 assertThat "$(readsInBam "$workflowDir/test/test1_paired.bam")" "$(readsInOutputDir "$outDir/test1_paired.bam_sorted_fastqs")" \
-  "Sorted output FASTQs have correct number of non-supplementary and non-secondary reads for paired-end input bam"
+  "Read number in sorted output FASTQs on paired-end input bam"
 assertThat "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" "$(readsInOutputDir "$outDir/test1_unpaired.bam_sorted_fastqs")" \
-  "Sorted output FASTQs have correct number of non-supplementary and non-secondary reads for single-end input bam"
+  "Read number in sorted output FASTQs on single-end input bam"
 
 testFinished
