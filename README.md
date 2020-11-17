@@ -1,3 +1,5 @@
+[![Build Status - Travis](https://travis-ci.org/DKFZ-ODCF/nf-bamtofastq.svg?branch=master)](https://travis-ci.org/DKFZ-ODCF/nf-bamtofastq)
+
 # BamToFastq Nexflow Workflow
 
 Convert BAM files back to FASTQ.
@@ -50,6 +52,20 @@ Please have a look at the [project board](projects/1) for further information.
     * `compressIntermediateFastqs`: Whether to compress FASTQs produced by `bamtofastq` when doing subsequent sorting. Default: true. This is only relevant if `sortFastq=true`.
     * `compressorThreads`: The compressor (pigz) can use multiple threads for compression. Default: 4
 
+### Output
+
+In the `outputDir` the workflow creates a sub-directory for each input BAM file. These are named like the BAM with one of the suffixes `_fastqs` of `_sorted_fastqs` added, dependent on the value for `sortFastqs` you selected. Each of these directories contains a set of FASTQ files, whose names follow the pattern
+
+```
+${readGroupName}_${readType}.fastq.gz
+```
+
+The read-group name is the name of the "@RG" attribute the read in the file was found to be connected to. For reads in your BAM that don't have a read-group assigned the default read-group name "default" is used. Consequently, your files should not contain a read-group "default". The read-type is one of the following:
+
+  * R1, R2: paired-reads 1 or 2
+  * U1, U2: orphaned reads, i.e. first or second reads marked as paired but with a missing mate.
+  * S: single-end reads
+
 ## More Examples
 
 ### Run with Docker
@@ -73,7 +89,7 @@ Then to run the workflow locally with Docker you can do e.g.
 nextflow run bam2fastq.nf \
     -profile local,docker \
     -ansi-log \
-    --bamFiles=test/test1.bam,test/test2.bam \
+    --bamFiles=test/test1_paired.bam,test/test1_unpaired.bam \
     --outputDir=test_out \
     --sortFastqs=true
 ```
@@ -90,7 +106,7 @@ singularity build nf-bam2fastq.sif docker-daemon://nf-bam2fastq:latest
 nextflow run bam2fastq.nf \
     -profile local,singularity \
     -ansi-log \
-    --bamFiles=test/test1.bam,test/test2.bam \
+    --bamFiles=test/test1_paired.bam,test/test1_unpaired.bam \
     --outputDir=test_out \
     --sortFastqs=true
 ```
@@ -115,7 +131,7 @@ Here another example, if you want to run the workflow as Singularity containers 
 nextflow run bam2fastq.nf \
     -profile lsf,singularity \
     -ansi-log \
-    --bamFiles=test/test1.bam,test/test2.bam \
+    --bamFiles=test/test1_paired.bam,test/test1_unpaired.bam \
     --outputDir=test_out \
     --sortFastqs=true
 ```
@@ -125,6 +141,18 @@ Please refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest
 ## Origins
 
 The workflow is a port of the Roddy-based [https://github.com/TheRoddyWMS/BamToFastqPlugin](BamToFastqPlugin). Compared to the Roddy-workflow, some problems with the execution of parallel processing, resulting in potential errors, have been fixed.
+
+## Development
+
+The integration tests can be run with
+
+```bash
+test/test1.sh test-results/
+```
+
+This will create a test environment with `nextflow` it `test-results/test-environment` and run the tests.
+
+The integration tests are also run in Travis CI.
 
 ## License & Contributors
 

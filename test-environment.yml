@@ -1,4 +1,4 @@
-name: nf-bam2fastq 
+name: test-environment
 channels:
   - conda-forge
   - bioconda
@@ -7,10 +7,6 @@ channels:
 channel_priority: strict
 dependencies:
   - bash=5.0.018
-  - biobambam=2.0.87
-  - mbuffer=20160228
-  - perl=5.22.2.1
-  - pigz=2.3.4
-  - python=3.6
   - samtools=1.11
+  - nextflow
 

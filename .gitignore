@@ -9,3 +9,5 @@ test_out/
 *.html
 *.html.*
 *~
+*.sif
+
