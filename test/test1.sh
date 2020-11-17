@@ -8,7 +8,9 @@ set -ue
 set -o pipefail
 
 outDir="${1:?No outDir set}"
-workflowDir=$(readlink -f "${2:-./}")
+environmentDir="${2:-"$outDir/test-environment"}"
+
+workflowDir="$(readlink -f $(readlink -f $(dirname "$BASH_SOURCE")"/.."))"
 
 readsInBam() {
   local bamFile="${1:?No BAM file given}"
@@ -18,9 +20,9 @@ readsInBam() {
 
 readsInOutputDir() {
   local outputDir="${1:?No outputDir given}"
-  zcat --quiet "$outputDir"/* \
-    | paste - - - - \
-    | wc -l
+  zcat --quiet "$outputDir"/* |
+    paste - - - - |
+    wc -l
 }
 
 TEST_TOTAL=0
@@ -32,16 +34,16 @@ assertThat() {
   local message="${3:?No message given}"
   let TEST_TOTAL=($TEST_TOTAL + 1)
   if [[ "$first" == "$second" ]]; then
-    echo "Success: $message: $first == $second" >> /dev/stderr
+    echo "Success: $message: $first == $second" >>/dev/stderr
   else
-    echo "Failure: $message: $first != $second" >> /dev/stderr
+    echo "Failure: $message: $first != $second" >>/dev/stderr
     let TEST_ERRORS=($TEST_ERRORS + 1)
   fi
 }
 
-testFinish() {
-  echo "" >> /dev/stderr
-  echo "$TEST_ERRORS of $TEST_TOTAL tests failed." >> /dev/stderr
+testFinished() {
+  echo "" >>/dev/stderr
+  echo "$TEST_ERRORS of $TEST_TOTAL tests failed." >>/dev/stderr
   if [[ $TEST_ERRORS > 0 ]]; then
     exit 1
   else
@@ -51,11 +53,11 @@ testFinish() {
 
 # Setup the environments (nextflow, samtools).
 mkdir -p "$outDir"
-if [[ ! -d "$outDir/test-environment" ]]; then
-  conda env create -f "$workflowDir/test-environment.yml" -p "$outDir/test-environment"
+if [[ ! -d "$environmentDir" ]]; then
+  conda env create -f "$workflowDir/test-environment.yml" -p "$environmentDir"
 fi
 set +ue
-source "$CONDA_PREFIX/bin/activate" "$outDir/test-environment"
+source activate "$environmentDir"
 set -ue
 
 # Run the tests.
@@ -67,9 +69,9 @@ nextflow run "$workflowDir/bam2fastq.nf" \
   --outputDir="$outDir" \
   --sortFastqs=false
 assertThat "$(readsInBam "$workflowDir/test/test1_paired.bam")" "$(readsInOutputDir "$outDir/test1_paired.bam_fastqs")" \
-  "Unsorted output FASTQs have correct number of non-supplementary and non-secondary reads for paired-end input bam"
+  "Read number in unsorted output FASTQs on paired-end input bam"
 assertThat "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" "$(readsInOutputDir "$outDir/test1_unpaired.bam_fastqs")" \
-  "Unsorted output FASTQs have correct number of non-supplementary and non-secondary reads for single-end input bam"
+  "Read number in unsorted output FASTQs on single-end input bam"
 
 nextflow run "$workflowDir/bam2fastq.nf" \
   -profile test,conda \
@@ -79,9 +81,8 @@ nextflow run "$workflowDir/bam2fastq.nf" \
   --outputDir="$outDir" \
   --sortFastqs=true
 assertThat "$(readsInBam "$workflowDir/test/test1_paired.bam")" "$(readsInOutputDir "$outDir/test1_paired.bam_sorted_fastqs")" \
-  "Sorted output FASTQs have correct number of non-supplementary and non-secondary reads for paired-end input bam"
+  "Read number in sorted output FASTQs on paired-end input bam"
 assertThat "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" "$(readsInOutputDir "$outDir/test1_unpaired.bam_sorted_fastqs")" \
-  "Sorted output FASTQs have correct number of non-supplementary and non-secondary reads for single-end input bam"
+  "Read number in sorted output FASTQs on single-end input bam"
 
-
-testFinish
+testFinished
