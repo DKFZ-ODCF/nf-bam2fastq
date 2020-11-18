@@ -154,6 +154,19 @@ This will create a test environment with `nextflow` it `test-results/test-enviro
 
 The integration tests are also run in Travis CI.
 
+## Release Notes
+
+* 0.2.0 (November 17., 2020)
+
+  * Added integration tests
+  * CI via travis-ci
+  * **NOTE**: Due to a bug in the used biobambam version 2.0.87 the orphaned second-read file is not written. See [here](https://gitlab.com/german.tischler/biobambam2/-/issues/94). An update to 2.0.177+ is necessary. 
+
+* 0.1.0 (August 26., 2020)
+
+  * Working but not deeply tested base version 
+
+
 ## License & Contributors
 
 See [LICENSE](LICENSE) and [CONTRIBUTORS](CONTRIBUTORS).
