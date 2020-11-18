@@ -98,8 +98,8 @@ process bamToFastq {
     // Just bamtofastq
     cpus 1
     // The biobambam paper states something like 133 MB.
-    memory { 300.MB * task.attempt }
-    time { 1.hour * task.attempt }
+    memory { 500.GB * task.attempt }
+    time { 2.hour * task.attempt }
     maxRetries 3
 
     publishDir params.outputDir, enabled: !params.sortFastqs

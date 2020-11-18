@@ -99,7 +99,8 @@ nextflow run bam2fastq.nf \
 To run the workflow with singularity, convert the previously build Docker container to Singularity (no native Singularity container, yet):
 
 ```bash
-# Convert the Docker image to Singularity
+# Convert the Docker image to Singularity.
+# Note that the image is stored in the current directory where it is then also expected by the singularity profile.
 singularity build nf-bam2fastq.sif docker-daemon://nf-bam2fastq:latest
 
 # Run with the singularity profile
