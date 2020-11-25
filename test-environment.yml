@@ -2,9 +2,7 @@ name: test-environment
 channels:
   - conda-forge
   - bioconda
-  - bioconda-legacy
   - defaults
-channel_priority: strict
 dependencies:
   - bash=5.0.018
   - samtools=1.11

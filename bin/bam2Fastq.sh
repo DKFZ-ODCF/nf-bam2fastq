@@ -73,7 +73,7 @@ processPairedEndWithReadGroups() {
     ## supplementary (http://seqanswers.com/forums/showthread.php?t=40239). To get the full set of reads back from a
     ## (complete) BWA use only non-supplementary (-F 0x800) and primary (-F 0x100) alignments.
     ##
-    ## Biobambam bamtofastq (2.0.87)
+    ## Biobambam bamtofastq
     ##
     ## * takes care of restricting to non-supplementary, primary reads
     ## * requires collation to produce files split by read-groups
@@ -87,8 +87,6 @@ processPairedEndWithReadGroups() {
         outputperreadgrouprgsm=0 \
         outputdir="$outputDir/" \
         collate=1 \
-        colsbs=268435456 \
-        colhlog=19 \
         gz=$(biobambamCompressFastqs) \
         outputperreadgroupsuffixF=_R1."$FASTQ_SUFFIX" \
         outputperreadgroupsuffixF2=_R2."$FASTQ_SUFFIX" \

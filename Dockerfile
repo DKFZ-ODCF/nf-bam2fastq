@@ -4,18 +4,21 @@ LABEL maintainer="Philip R. Kensche <p.kensche@dkfz.de>"
 
 SHELL ["/bin/bash", "-c"]
 
+# Setup base conda container.
+RUN conda init bash && \
+    conda update -n base -c defaults conda && \
+    conda clean --all -f -y
+
+# Add nf-bam2fastq requirements.
+COPY task-environment.yml ./
+RUN conda env create -n nf-bam2fastq -f task-environment.yml && \
+    source activate nf-bam2fastq && \
+    conda clean --all -f -y
+
 # ps is needed for collecting runtime information from the container
 RUN apt update && \
     apt-get install -y procps && \
     rm -rf /var/lib/apt/lists/*
-
-COPY task-environment.yml ./
-
-RUN conda init bash && \
-    conda update --prefix /opt/conda conda && \
-    conda env create -n nf-bam2fastq -f task-environment.yml && \
-    source activate nf-bam2fastq && \
-    conda clean --all -f -y
 
 # For login Bash /etc/profile and ~/.profile is sourced. /etc/profile sources /etc/bash.bashrc.
 # For non-login, interactive Bash /etc/bash.bashrc is sourced directly.
