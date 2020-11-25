@@ -98,9 +98,9 @@ process bamToFastq {
     // Just bamtofastq
     cpus 1
     // The biobambam paper states something like 133 MB.
-    memory { 500.GB * task.attempt }
-    time { 2.hour * task.attempt }
-    maxRetries 3
+    memory 1.GB
+    time { 48.hours * (2**task.attempt - 1) }
+    maxRetries 2
 
     publishDir params.outputDir, enabled: !params.sortFastqs
 
@@ -139,6 +139,7 @@ pairedFastqs_ch = readsFilesA_ch.flatMap {
 }
 
 
+// Unpaired FASTQs are unmatched or orphaned paired-reads (1 or 2) and singletons, i.e. unpaired reads.
 unpairedFastqs_ch = readsFilesB_ch.flatMap {
     def (bam, fastqs) = it
     fastqs.
@@ -148,10 +149,11 @@ unpairedFastqs_ch = readsFilesB_ch.flatMap {
 
 
 process nameSortUnpairedFastqs {
-  cpus { (params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads : 0 )) * task.attempt; 1 }
-    memory { (params.sortMemory * params.sortThreads + 50.MB) * task.attempt }
-    time 1.hour
-    maxRetries 3
+    cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads : 0 )  }
+    memory { params.sortMemory * params.sortThreads * 1.2 }
+    // TODO Make runtime dependent on file-size.
+    time { 24.hour * (2**task.attempt - 1) }
+    maxRetries 2
 
     publishDir params.outputDir
 
@@ -184,10 +186,11 @@ process nameSortUnpairedFastqs {
 
 
 process nameSortPairedFastqs {
-    cpus { (params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads * 2 : 0)) * task.attempt; 1 }
-    memory { (params.sortMemory * params.sortThreads + 200.MB) * task.attempt }
-    time 1.hour
-    maxRetries 3
+    cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads * 2 : 0) }
+    memory { params.sortMemory * params.sortThreads * 1.2 }
+    // TODO Make runtime dependent on file-size.
+    time { 24.hours * (2**task.attempt - 1) }
+    maxRetries 2
 
     publishDir params.outputDir
 
