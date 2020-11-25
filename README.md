@@ -157,6 +157,11 @@ The integration tests are also run in Travis CI.
 
 ## Release Notes
 
+* 1.0.0 (November ??., 2020)
+
+  * Adapted resource expressions to conservative values
+  * Updated to biobambam 2.0.1??
+
 * 0.2.0 (November 17., 2020)
 
   * Added integration tests
