@@ -68,7 +68,7 @@ nextflow run "$workflowDir/bam2fastq.nf" \
   --bamFiles="$workflowDir/test/test1_paired.bam,$workflowDir/test/test1_unpaired.bam" \
   --outputDir="$outDir" \
   --sortFastqs=false \
-  --compressorThreads=1 \
+  --compressorThreads=0 \
   --sortThreads=1 \
   --sortMemory="100 MB"
 assertThat $(readsInBam "$workflowDir/test/test1_paired.bam") $(( $(readsInOutputDir "$outDir/test1_paired.bam_fastqs") + 265 )) \
@@ -83,7 +83,7 @@ nextflow run "$workflowDir/bam2fastq.nf" \
   --bamFiles="$workflowDir/test/test1_paired.bam,$workflowDir/test/test1_unpaired.bam" \
   --outputDir="$outDir" \
   --sortFastqs=true \
-  --compressorThreads=1 \
+  --compressorThreads=0 \
   --sortThreads=1 \
   --sortMemory="100 MB"
 assertThat $(readsInBam "$workflowDir/test/test1_paired.bam") $(( $(readsInOutputDir "$outDir/test1_paired.bam_sorted_fastqs") + 265 )) \

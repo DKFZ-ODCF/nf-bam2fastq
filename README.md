@@ -52,7 +52,7 @@ Please have a look at the [project board](projects/1) for further information.
     * `sortMemory`: Memory used for sorting. Too large values are useless, unless you have enough memory to sort completely in-memory. Default: "100 MB".
     * `sortThreads`: Number of threads used for sorting. Default: 4.
     * `compressIntermediateFastqs`: Whether to compress FASTQs produced by `bamtofastq` when doing subsequent sorting. Default: true. This is only relevant if `sortFastq=true`.
-    * `compressorThreads`: The compressor (pigz) can use multiple threads for compression. Default: 4
+    * `compressorThreads`: The compressor (pigz) can use multiple threads for compression. Default: 4. If you set this value to zero then no additional CPUs are enforced by Nextflow to be present. However, a single thread is used for compression and it uses the same CPUs as the ones requested for sorting.
 
 ### Output
 
