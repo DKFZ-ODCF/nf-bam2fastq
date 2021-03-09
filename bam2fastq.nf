@@ -41,7 +41,7 @@ params.compressorThreads = 4
 
 /** Memory used for storing data while sorting. Is passed to the sorting tool and should follow its required syntax.
  *  WARNING: Also adapt the job requirements! */
-params.sortMemory = 1.GB
+params.sortMemory = "1 GB"
 
 /** The number of parallel threads used for sorting. */
 params.sortThreads = 4
@@ -244,7 +244,8 @@ void checkParameters(parameters, List<String> allowedParameters) {
 }
 
 
-String toSortMemoryString(MemoryUnit mem) {
+String toSortMemoryString(String memString) {
+    MemoryUnit mem = new MemoryUnit(memString)
     def splitted = mem.toString().split(" ")
     String size = splitted[0]
     switch(splitted[1]) {
