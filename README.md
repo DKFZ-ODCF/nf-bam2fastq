@@ -49,7 +49,7 @@ Please have a look at the [project board](projects/1) for further information.
   * `outputPerReadGroup`: Whether reads from different read-groups should be written to different files. Default: true. Writing read groups into separate files reduces the time needed for sorting.
   Default: `true`.
   * Trading memory vs. IO
-    * `sortMemory`: Memory used for sorting. Too large values are useless, unless you have enough memory to sort completely in-memory. Default: "1 GB".
+    * `sortMemory`: Memory used for sorting. Too large values are useless, unless you have enough memory to sort completely in-memory. Default: "100 MB".
     * `sortThreads`: Number of threads used for sorting. Default: 4.
     * `compressIntermediateFastqs`: Whether to compress FASTQs produced by `bamtofastq` when doing subsequent sorting. Default: true. This is only relevant if `sortFastq=true`.
     * `compressorThreads`: The compressor (pigz) can use multiple threads for compression. Default: 4
@@ -62,7 +62,7 @@ In the `outputDir` the workflow creates a sub-directory for each input BAM file.
 ${readGroupName}_${readType}.fastq.gz
 ```
 
-The read-group name is the name of the "@RG" attribute the reads in the file wer found to be connected to. For reads in your BAM that don't have a read-group assigned the "default" read-group is used. Consequently, your BAMs should not contain a read-group "default"! The read-type is one of the following:
+The read-group name is the name of the "@RG" attribute the reads in the file were found to be connected to. For reads in your BAM that don't have a read-group assigned the "default" read-group is used. Consequently, your BAMs should not contain a read-group "default"! The read-type is one of the following:
 
   * R1, R2: paired-reads 1 or 2
   * U1, U2: orphaned reads, i.e. first or second reads marked as paired but with a missing mate.
@@ -166,8 +166,8 @@ The integration tests are also run in Travis CI.
 * 1.0.0 (March 9., 2021)
 
   * Adapted resource expressions to conservative values.
-  * Adapted resources for integration tests (threads and memory).
-  * Bugfix setting memory for paired-end processing.
+  * Reduced resources for integration tests (threads and memory).
+  * Bugfix: Set sorting memory.
   * **NOTE**: Although this is a major release this version still relies on the 2.0.87 version of biobambam2 that is subject to the missing orphaned second-read bug.
 
 * 0.2.0 (November 17., 2020)
