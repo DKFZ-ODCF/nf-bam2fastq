@@ -6,7 +6,7 @@ Convert BAM files back to FASTQ.
 
 ## Quickstart
 
-Provided you have a working Conda installation and two BAM files, you can run workflow with
+Provided you have a working Conda installation, you can run workflow with
 
 ```bash
 mkdir test_out/
@@ -18,14 +18,16 @@ nextflow run bam2fastq.nf \
     --sortFastqs=false
 ```
 
-For each BAM file in the comma-separated `--bamFileList` parameter, one directory with FASTQs is created in the `outputDir`. With the `local` profile the processing jobs will be executed locally. The `conda` profile will let Nextflow create a Conda environment from the `./task-environment.yml` file (by default in the `work/` directory.
+For each BAM file in the comma-separated `--bamFileList` parameter, one directory with FASTQs is created in the `outputDir`. With the `local` profile the processing jobs will be executed locally. The `conda` profile will let Nextflow create a Conda environment from the `./task-environment.yml` file (by default in the `work/` directory).
 
 ## Remarks
 
-  * By default, the workflow sorts FASTQ files by their IDs to avoid e.g. that reads extracted from position-sorted BAMs are fed into the next processing step (possibly re-alignment) in a sorting order that may affect the processing. For instance, keeping position-based sorting order may result in systematic fluctuations of the average insert-size distributions in the FASTQ stream. Note, however, that most jobs of the workflow are actually sorting-jobs -- so you can save a lot of computation time, if the input order during alignment does not matter for you.
-  * Obviously, you can only reconstitute complete original FASTQs (except for order), if the BAM was not filtered in any way, e.g. by removing duplicated reads or read trimming.  
+  * By default, the workflow sorts FASTQ files by their IDs to avoid e.g. that reads extracted from position-sorted BAMs are fed into the next processing step (possibly re-alignment) in a sorting order that may affect the processing. For instance, keeping position-based sorting order may result in systematic fluctuations of the average insert-size distributions in the FASTQ stream. Note, however, that most jobs of the workflow are actually sorting-jobs -- so you can save a lot of computation time, if the input order during alignment does not matter for you. And if you don't worry about such problems during alignment, you may safe a lot of additional time during sorting of the already almost-sorted alignment output.
+  * Obviously, you can only reconstitute complete original FASTQs (except for order), if the BAM was not filtered in any way, e.g. by removing duplicated reads or read trimming.
   * Paired-end FASTQs are generated with biobambam2's `bamtofastq`.
   * Sorting is done with the UNIX coreutils tool "sort" in an efficient way (e.g. sorting per read-group; co-sorting of order-matched mate FASTQs).
+
+> **Warning**: This version still uses the 2.0.87 version of biobambam2, which contains a [bug](https://gitlab.com/german.tischler/biobambam2/-/issues/94) that prevents that files for orphaned second-reads (U2) are written. If you apply this workflow version to paired-end BAMs, make sure they are complete and non-truncated. 
 
 ## Status
 
@@ -47,20 +49,20 @@ Please have a look at the [project board](projects/1) for further information.
   * `outputPerReadGroup`: Whether reads from different read-groups should be written to different files. Default: true. Writing read groups into separate files reduces the time needed for sorting.
   Default: `true`.
   * Trading memory vs. IO
-    * `sortMemory`: Memory used for sorting. Too large values are useless, unless you have enough memory to sort completely in-memory. Default: 100 MB.
+    * `sortMemory`: Memory used for sorting. Too large values are useless, unless you have enough memory to sort completely in-memory. Default: "1 GB".
     * `sortThreads`: Number of threads used for sorting. Default: 4.
     * `compressIntermediateFastqs`: Whether to compress FASTQs produced by `bamtofastq` when doing subsequent sorting. Default: true. This is only relevant if `sortFastq=true`.
     * `compressorThreads`: The compressor (pigz) can use multiple threads for compression. Default: 4
 
 ### Output
 
-In the `outputDir` the workflow creates a sub-directory for each input BAM file. These are named like the BAM with one of the suffixes `_fastqs` of `_sorted_fastqs` added, dependent on the value for `sortFastqs` you selected. Each of these directories contains a set of FASTQ files, whose names follow the pattern
+In the `outputDir` the workflow creates a sub-directory for each input BAM file. These are named like the BAM with one of the suffixes `_fastqs` or `_sorted_fastqs` added, dependent on the value for `sortFastqs` you selected. Each of these directories contains a set of FASTQ files, whose names follow the pattern
 
 ```
 ${readGroupName}_${readType}.fastq.gz
 ```
 
-The read-group name is the name of the "@RG" attribute the read in the file was found to be connected to. For reads in your BAM that don't have a read-group assigned the default read-group name "default" is used. Consequently, your files should not contain a read-group "default". The read-type is one of the following:
+The read-group name is the name of the "@RG" attribute the reads in the file wer found to be connected to. For reads in your BAM that don't have a read-group assigned the "default" read-group is used. Consequently, your BAMs should not contain a read-group "default"! The read-type is one of the following:
 
   * R1, R2: paired-reads 1 or 2
   * U1, U2: orphaned reads, i.e. first or second reads marked as paired but with a missing mate.
@@ -157,10 +159,16 @@ The integration tests are also run in Travis CI.
 
 ## Release Notes
 
-* 1.0.0 (November ??., 2020)
+* 1.x.x (?)
 
-  * Adapted resource expressions to conservative values
-  * Updated to biobambam 2.0.1??
+  * Update to biobambam 2.0.177 to fix its orphaned second-reads bug
+
+* 1.0.0 (March 9., 2021)
+
+  * Adapted resource expressions to conservative values.
+  * Adapted resources for integration tests (threads and memory).
+  * Bugfix setting memory for paired-end processing.
+  * **NOTE**: Although this is a major release this version still relies on the 2.0.87 version of biobambam2 that is subject to the missing orphaned second-read bug.
 
 * 0.2.0 (November 17., 2020)
 
