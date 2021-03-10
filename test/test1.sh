@@ -9,6 +9,7 @@ set -o pipefail
 
 outDir="${1:?No outDir set}"
 environmentDir="${2:-"$outDir/test-environment"}"
+environmentProfile="${3:-conda}"
 
 workflowDir="$(readlink -f $(readlink -f $(dirname "$BASH_SOURCE")"/.."))"
 
@@ -34,16 +35,16 @@ assertThat() {
   local message="${3:?No message given}"
   let TEST_TOTAL=($TEST_TOTAL + 1)
   if [[ "$first" == "$second" ]]; then
-    echo "Success: $message: $first == $second" >>/dev/stderr
+    echo "Success: $message: $first == $second" >> /dev/stderr
   else
-    echo "Failure: $message: $first != $second" >>/dev/stderr
+    echo "Failure: $message: $first != $second" >> /dev/stderr
     let TEST_ERRORS=($TEST_ERRORS + 1)
   fi
 }
 
 testFinished() {
   echo "" >>/dev/stderr
-  echo "$TEST_ERRORS of $TEST_TOTAL tests failed." >>/dev/stderr
+  echo "$TEST_ERRORS of $TEST_TOTAL tests failed." >> /dev/stderr
   if [[ $TEST_ERRORS > 0 ]]; then
     exit 1
   else
@@ -62,9 +63,10 @@ set -ue
 
 # Run the tests.
 nextflow run "$workflowDir/bam2fastq.nf" \
-  -profile test,conda \
+  -profile "test,$environmentProfile" \
   -ansi-log \
   -resume \
+  -work-dir "$outDir/work" \
   --bamFiles="$workflowDir/test/test1_paired.bam,$workflowDir/test/test1_unpaired.bam" \
   --outputDir="$outDir" \
   --sortFastqs=false \
@@ -77,9 +79,10 @@ assertThat $(readsInBam "$workflowDir/test/test1_unpaired.bam") $(readsInOutputD
   "Read number in unsorted output FASTQs on single-end input bam"
 
 nextflow run "$workflowDir/bam2fastq.nf" \
-  -profile test,conda \
+  -profile "test,$environmentProfile" \
   -ansi-log \
   -resume \
+  -work-dir "$outDir/work" \
   --bamFiles="$workflowDir/test/test1_paired.bam,$workflowDir/test/test1_unpaired.bam" \
   --outputDir="$outDir" \
   --sortFastqs=true \

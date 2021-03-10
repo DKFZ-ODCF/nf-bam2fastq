@@ -60,6 +60,9 @@ allowedParameters = ['bamFiles', 'outputDir',
 
 checkParameters(params, allowedParameters)
 
+// The sorting memory is used as MemoryUnit in the code below.
+sortMemory = new MemoryUnit(params.sortMemory)
+
 
 def fastqSuffix(Boolean compressed) {
     if (compressed)
@@ -150,7 +153,7 @@ unpairedFastqs_ch = readsFilesB_ch.flatMap {
 
 process nameSortUnpairedFastqs {
     cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads : 0 )  }
-    memory { params.sortMemory * params.sortThreads * 1.2 }
+    memory { (sortMemory + 100.MB) * params.sortThreads * 1.2 }
     // TODO Make runtime dependent on file-size.
     time { 24.hour * (2**task.attempt - 1) }
     maxRetries 2
@@ -176,7 +179,7 @@ process nameSortUnpairedFastqs {
         compressor="$compressor" \
         compressorThreads="$params.compressorThreads" \
         sortThreads="$params.sortThreads" \
-        sortMemory="${toSortMemoryString(params.sortMemory)}"	\
+        sortMemory="${toSortMemoryString(sortMemory)}"	\
         fastqFile="$fastq" \
         sortedFastqFile="$sortedFastqFile" \
         coreutilsSortFastqSingle.sh
@@ -187,7 +190,7 @@ process nameSortUnpairedFastqs {
 
 process nameSortPairedFastqs {
     cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads * 2 : 0) }
-    memory { params.sortMemory * params.sortThreads * 1.2 }
+    memory { (sortMemory + 100.MB) * params.sortThreads * 1.2 }
     // TODO Make runtime dependent on file-size.
     time { 24.hours * (2**task.attempt - 1) }
     maxRetries 2
@@ -214,7 +217,7 @@ process nameSortPairedFastqs {
         compressor="$compressor" \
         compressorThreads="$params.compressorThreads" \
         sortThreads="$params.sortThreads" \
-        sortMemory="${toSortMemoryString(params.sortMemory)}"	\
+        sortMemory="${toSortMemoryString(sortMemory)}"	\
         fastqFile1="$fastq1" \
         fastqFile2="$fastq2" \
         sortedFastqFile1="$sortedFastqFile1" \
@@ -244,8 +247,7 @@ void checkParameters(parameters, List<String> allowedParameters) {
 }
 
 
-String toSortMemoryString(String memString) {
-    MemoryUnit mem = new MemoryUnit(memString)
+String toSortMemoryString(MemoryUnit mem) {
     def splitted = mem.toString().split(" ")
     String size = splitted[0]
     switch(splitted[1]) {
