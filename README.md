@@ -157,7 +157,11 @@ This will create a test environment with `nextflow` it `test-results/test-enviro
 
 The integration tests are also run in Travis CI.
 
-## Releasing the Container
+## Manual container release
+
+The container contains a Conda installation and is pretty big. It should only be released if its content is actually changed. For instance, it would be perfectly fine to have a workflow version 1.6.5 but still use the container for 1.2.7.
+
+This is an outline of the procedure to release the container to Github Container Registry:
 
 1. Set the version that you want to release as variable.
    ```bash
