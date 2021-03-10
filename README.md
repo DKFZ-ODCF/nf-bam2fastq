@@ -103,7 +103,7 @@ To run the workflow with singularity, convert the previously build Docker contai
 ```bash
 # Convert the Docker image to Singularity.
 # Note that the image is stored in the current directory where it is then also expected by the singularity profile.
-singularity build nf-bam2fastq.sif docker-daemon://nf-bam2fastq:latest
+singularity build nf-bam2fastq.sif docker-daemon://ghcr.io/dkfz-odcf/nf-bam2fastq:latest
 
 # Run with the singularity profile
 nextflow run bam2fastq.nf \
@@ -156,6 +156,27 @@ test/test1.sh test-results/
 This will create a test environment with `nextflow` it `test-results/test-environment` and run the tests.
 
 The integration tests are also run in Travis CI.
+
+## Releasing the Container
+
+1. Set the version that you want to release as variable.
+   ```bash
+   versionTag=1.0.0
+   ```
+2. Build the container.
+  ```bash
+   docker build -t ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag --build-arg HTTP_PROXY=$HTTP_PROXY --build-arg HTTPS_PROXY=$HTTPS_PROXY ./
+   ```
+3. Edit the version-tag for the docker container in the "docker"-profile in the nextflow.config to match `$versionTag`. 
+4. Run the integration test with the new container
+   ```bash
+   test/test1.sh docker-test docker-test/test-environment docker
+   ```
+5. If the test succeeds, push the container to Github container registry. Set the CR_PAT variable to your personal access token (PAT):
+   ```bash
+   echo $CR_PAT | docker login ghcr.io -u vinjana --password-stdin
+   docker image push ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag
+   ```
 
 ## Release Notes
 

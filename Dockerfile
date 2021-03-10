@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:4.8.3
+FROM continuumio/miniconda3:4.9.2
 
 LABEL maintainer="Philip R. Kensche <p.kensche@dkfz.de>"
 
@@ -7,7 +7,7 @@ SHELL ["/bin/bash", "-c"]
 RUN conda init bash
 
 # Add nf-bam2fastq requirements.
-LABEL container-base-name="dkfz-odcf/nf-bam2fastq"
+LABEL org.opencontainers.image.source="https://github.com/dkfz-odcf/nf-bam2fastq"
 COPY task-environment.yml ./
 RUN conda env create -n nf-bam2fastq -f task-environment.yml && \
     source activate nf-bam2fastq && \
