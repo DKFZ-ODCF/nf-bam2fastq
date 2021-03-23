@@ -10,7 +10,7 @@ Provided you have a working Conda installation, you can run workflow with
 
 ```bash
 mkdir test_out/
-nextflow run bam2fastq.nf \
+nextflow run main.nf \
     -profile local,conda \
     -ansi-log \
     --bamFileList=/path/to/your.bam \
@@ -27,8 +27,6 @@ For each BAM file in the comma-separated `--bamFileList` parameter, one director
   * Paired-end FASTQs are generated with biobambam2's `bamtofastq`.
   * Sorting is done with the UNIX coreutils tool "sort" in an efficient way (e.g. sorting per read-group; co-sorting of order-matched mate FASTQs).
 
-> **Warning**: This version still uses the 2.0.87 version of biobambam2, which contains a [bug](https://gitlab.com/german.tischler/biobambam2/-/issues/94) that prevents that files for orphaned second-reads (U2) are written. If you apply this workflow version to paired-end BAMs, make sure they are complete and non-truncated. 
-
 ## Status
 
 Please have a look at the [project board](projects/1) for further information.
@@ -37,7 +35,7 @@ Please have a look at the [project board](projects/1) for further information.
 
 ### Required parameters
 
-  * `bamFileList`: Comma-separated list of input BAM-file paths.
+  * `inputs`: Comma-separated list of input BAM-file paths.
   * `outputDir`: Output directory
 
 ### Optional parameters
@@ -48,7 +46,7 @@ Please have a look at the [project board](projects/1) for further information.
   * `excludedFlags`: Comma-separated list of flags to `bamtofastq`'s `exclude` parameter. Default: "secondary,supplementary". If you have complete, BWA-aligned BAM files then exactly the reads of the input FASTQ are reproduced. For other aligners you need to check yourself, what are the optimal parameters.
   * `outputPerReadGroup`: Whether reads from different read-groups should be written to different files. Default: true. Writing read groups into separate files reduces the time needed for sorting.
   Default: `true`.
-  * Trading memory vs. IO
+  * Trading memory vs. I/O
     * `sortMemory`: Memory used for sorting. Too large values are useless, unless you have enough memory to sort completely in-memory. Default: "100 MB".
     * `sortThreads`: Number of threads used for sorting. Default: 4.
     * `compressIntermediateFastqs`: Whether to compress FASTQs produced by `bamtofastq` when doing subsequent sorting. Default: true. This is only relevant if `sortFastq=true`.
@@ -72,23 +70,10 @@ The read-group name is the name of the "@RG" attribute the reads in the file wer
 
 ### Run with Docker
 
-A Dockerfile is provided. You will first have to build the container with
+You can run the workflow locally with Docker you can do e.g.
 
 ```bash
-cd nf-bam2fastq
-docker build \
-    --rm \
-    --build-arg http_proxy=$HTTP_PROXY \
-    --build-arg https_proxy=$HTTPS_PROXY \
-    -t \
-    nf-bam2fastq \
-    ./
-```
-
-Then to run the workflow locally with Docker you can do e.g.
-
-```bash
-nextflow run bam2fastq.nf \
+nextflow run main.nf \
     -profile local,docker \
     -ansi-log \
     --bamFiles=test/test1_paired.bam,test/test1_unpaired.bam \
@@ -96,17 +81,19 @@ nextflow run bam2fastq.nf \
     --sortFastqs=true
 ```
 
+This will automatically download the container from Github Container Registry.
+
 ### Run with Singularity
 
-To run the workflow with singularity, convert the previously build Docker container to Singularity (no native Singularity container, yet):
+To run the workflow with [Singularity](https://singularity.lbl.gov/), convert the previously build Docker container to Singularity:
 
 ```bash
 # Convert the Docker image to Singularity.
-# Note that the image is stored in the current directory where it is then also expected by the singularity profile.
+# Note that the image is stored in the current directory where it is then also expected by the "singularity" profile.
 singularity build nf-bam2fastq.sif docker-daemon://ghcr.io/dkfz-odcf/nf-bam2fastq:latest
 
-# Run with the singularity profile
-nextflow run bam2fastq.nf \
+# Run with the "singularity" profile
+nextflow run main.nf \
     -profile local,singularity \
     -ansi-log \
     --bamFiles=test/test1_paired.bam,test/test1_unpaired.bam \
@@ -116,7 +103,7 @@ nextflow run bam2fastq.nf \
 
 ## Environment and Execution
 
-[Nextflow](https://www.nextflow.io/docs/latest/config.html#config-profiles)'s `-profile` parameter allows setting technical options for executing the workflow. You have already seen some of the profiles and that these can be combined. We conceptually separated the predefined profiles into two types, those concerning the "environment" and those for selecting the "executor".
+[Nextflow](https://www.nextflow.io/docs/latest/config.html#config-profiles)'s `-profile` parameter allows setting technical options for executing the workflow. You have already seen some of the profiles and that these can be combined. We conceptually separated the predefined profiles into two types -- those concerning the "environment" and those for selecting the "executor".
 
 The following "environment" profiles that define which environment will be used for executing the jobs are predefined in the `nextflow.config`:
   * conda
@@ -131,10 +118,10 @@ Currently, there are only two "executor" profiles that define the job execution 
 Here another example, if you want to run the workflow as Singularity containers in an LSF cluster:
 
 ```bash
-nextflow run bam2fastq.nf \
+nextflow run main.nf \
     -profile lsf,singularity \
     -ansi-log \
-    --bamFiles=test/test1_paired.bam,test/test1_unpaired.bam \
+    --input=test/test1_paired.bam,test/test1_unpaired.bam \
     --outputDir=test_out \
     --sortFastqs=true
 ```
@@ -150,10 +137,10 @@ The workflow is a port of the Roddy-based [https://github.com/TheRoddyWMS/BamToF
 The integration tests can be run with
 
 ```bash
-test/test1.sh test-results/
+test/test1.sh test-results/ $profile
 ```
 
-This will create a test environment with `nextflow` it `test-results/test-environment` and run the tests.
+This will create a test environment with `nextflow` (using Conda) and run the tests. For the test itself you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. 
 
 The integration tests are also run in Travis CI.
 
@@ -184,16 +171,15 @@ This is an outline of the procedure to release the container to Github Container
 
 ## Release Notes
 
-* 1.x.x (?)
-
-  * Update to biobambam 2.0.177 to fix its orphaned second-reads bug
-
-* 1.0.0 (March 9., 2021)
+* 1.0.0 (?., 2021)
 
   * Adapted resource expressions to conservative values.
   * Reduced resources for integration tests (threads and memory).
   * Bugfix: Set sorting memory.
-  * **NOTE**: Although this is a major release this version still relies on the 2.0.87 version of biobambam2 that is subject to the missing orphaned second-read bug.
+  * Update to biobambam 2.0.179 to fix its orphaned second-reads bug
+  * Changes to make workflow more nf-core conformant  
+    * Rename `bam2fastq.nf` to `main.nf` (similar to nf-core projects)
+    * Rename `--bamFiles` to `--input` parameter
 
 * 0.2.0 (November 17., 2020)
 
@@ -208,4 +194,4 @@ This is an outline of the procedure to release the container to Github Container
 
 ## License & Contributors
 
-See [LICENSE](LICENSE) and [CONTRIBUTORS](CONTRIBUTORS).
+See [LICENSE.txt](LICENSE.txt) and [CONTRIBUTORS](CONTRIBUTORS).

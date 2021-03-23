@@ -1,5 +1,5 @@
 /**
- *  Copyright (c) 2020 DKFZ.
+ *  Copyright (c) 2021 DKFZ.
  *
  *  Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/LICENSE.txt).
  *
@@ -7,7 +7,7 @@
  */
 
 /** Comma-separated list of input BAMs */
-params.bamFiles
+params.input
 
 /** Path to which data should be written. One subdirectory per input BAM. */
 params.outputDir
@@ -51,7 +51,7 @@ params.debug = false
 
 
 
-allowedParameters = ['bamFiles', 'outputDir',
+allowedParameters = ['input', 'outputDir',
                      'sortFastqs', 'sortMemory', 'sortThreads',
                      'writeUnpairedFastq',
                      'compressIntermediateFastqs', 'compressorThreads',
@@ -91,7 +91,7 @@ ${allowedParameters.collect { "$it = ${params.get(it)}" }.join("\n")}
 
 
 bamFiles_ch = Channel.
-        fromPath(params.bamFiles.split(',') as List<String>,
+        fromPath(params.input.split(',') as List<String>,
                  checkIfExists: true)
 
 

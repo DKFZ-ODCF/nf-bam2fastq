@@ -16,7 +16,8 @@ RUN conda env create -n nf-bam2fastq -f task-environment.yml && \
 # ps is needed by Nextflow for collecting runtime information from the container
 RUN apt update && \
     apt-get install -y procps && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    apt clean
 
 # For login Bash /etc/profile and ~/.profile is sourced. /etc/profile sources /etc/bash.bashrc.
 # For non-login, interactive Bash /etc/bash.bashrc is sourced directly.
