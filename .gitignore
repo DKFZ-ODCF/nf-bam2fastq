@@ -1,7 +1,7 @@
 .idea
 .nextflow*
 work/
-test_out/
+test*
 *.txt
 *.txt.*
 *.png
@@ -10,4 +10,6 @@ test_out/
 *.html.*
 *~
 *.sif
+.travis.yml
+.git
 
