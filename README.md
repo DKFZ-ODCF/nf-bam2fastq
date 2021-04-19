@@ -1,6 +1,6 @@
 [![Build Status - Travis](https://travis-ci.org/DKFZ-ODCF/nf-bamtofastq.svg?branch=master)](https://travis-ci.org/DKFZ-ODCF/nf-bamtofastq)
 
-# BamToFastq Nexflow Workflow
+# BamToFastq Nextflow Workflow
 
 Convert BAM files back to FASTQ.
 
@@ -13,7 +13,7 @@ mkdir test_out/
 nextflow run main.nf \
     -profile local,conda \
     -ansi-log \
-    --bamFileList=/path/to/your.bam \
+    --input=/path/to/your.bam \
     --outputDir=test_out \
     --sortFastqs=false
 ```
@@ -22,20 +22,20 @@ For each BAM file in the comma-separated `--bamFileList` parameter, one director
 
 ## Remarks
 
-  * By default, the workflow sorts FASTQ files by their IDs to avoid e.g. that reads extracted from position-sorted BAMs are fed into the next processing step (possibly re-alignment) in a sorting order that may affect the processing. For instance, keeping position-based sorting order may result in systematic fluctuations of the average insert-size distributions in the FASTQ stream. Note, however, that most jobs of the workflow are actually sorting-jobs -- so you can save a lot of computation time, if the input order during alignment does not matter for you. And if you don't worry about such problems during alignment, you may safe a lot of additional time during sorting of the already almost-sorted alignment output.
+  * By default, the workflow sorts FASTQ files by their IDs to avoid e.g. that reads extracted from position-sorted BAMs are fed into the next processing step (possibly re-alignment) in a sorting order that may affect the processing. For instance, keeping position-based sorting order may result in systematic fluctuations of the average insert-size distributions in the FASTQ stream. Note, however, that most jobs of the workflow are actually sorting-jobs -- so you can save a lot of computation time, if the input order during alignment does not matter for you. And if you don't worry about such problems during alignment, you may save a lot of additional time during sorting of the already almost-sorted alignment output.
   * Obviously, you can only reconstitute complete original FASTQs (except for order), if the BAM was not filtered in any way, e.g. by removing duplicated reads or read trimming.
   * Paired-end FASTQs are generated with biobambam2's `bamtofastq`.
   * Sorting is done with the UNIX coreutils tool "sort" in an efficient way (e.g. sorting per read-group; co-sorting of order-matched mate FASTQs).
 
 ## Status
 
-Please have a look at the [project board](projects/1) for further information.
+Please have a look at the [project board](https://github.com/DKFZ-ODCF/nf-bam2fastq/projects/1) for further information.
 
 ## Parameters
 
 ### Required parameters
 
-  * `inputs`: Comma-separated list of input BAM-file paths.
+  * `input`: Comma-separated list of input BAM-file paths.
   * `outputDir`: Output directory
 
 ### Optional parameters
@@ -76,7 +76,7 @@ You can run the workflow locally with Docker you can do e.g.
 nextflow run main.nf \
     -profile local,docker \
     -ansi-log \
-    --bamFiles=test/test1_paired.bam,test/test1_unpaired.bam \
+    --input=test/test1_paired.bam,test/test1_unpaired.bam \
     --outputDir=test_out \
     --sortFastqs=true
 ```
@@ -96,7 +96,7 @@ singularity build nf-bam2fastq.sif docker-daemon://ghcr.io/dkfz-odcf/nf-bam2fast
 nextflow run main.nf \
     -profile local,singularity \
     -ansi-log \
-    --bamFiles=test/test1_paired.bam,test/test1_unpaired.bam \
+    --input=test/test1_paired.bam,test/test1_unpaired.bam \
     --outputDir=test_out \
     --sortFastqs=true
 ```

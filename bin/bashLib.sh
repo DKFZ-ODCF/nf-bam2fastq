@@ -83,16 +83,16 @@ printInfo () {
     ## Get information about the node.
     hostname -f
     ulimit -a
-    echo "user="$(whoami)
-    echo "umask="$(umask)
-    echo "groups="$(groups)
+    echo "user=$(whoami)"
+    echo "umask=$(umask)"
+    echo "groups=$(groups)"
     date +'%Y-%m-%d_%Hh%M'
 }
 
 ## Use 'assertNonEmpty $parameter || return $?'
 assertNonEmpty () {
     local value="$1"
-    local message="${2-EMPTY_VALUE_MSG}"
+    local message="${2-$EMPTY_VALUE_MSG}"
     if [[ "$value" == "" ]]; then
         throw "$EMPTY_VALUE_CODE" "$message" || return $?
     fi
@@ -128,10 +128,10 @@ stringJoin () {
     local separator="$1"
     shift
     assertNonEmpty "$separator" "Undefined separator" || return $?
-    declare -la values=($@)
+    declare -la values=( $@ )
     local result=""
     local first=true
-    for value in ${values[@]}; do
+    for value in "${values[@]}"; do
         if [[ $first == true ]]; then
             result="$value"
             first=false

@@ -62,6 +62,9 @@ set +ue
 source activate "$nextflowEnvironment"
 set -ue
 
+# Keep memory footprint small
+export NXF_OPTS="-Xmx128m"
+
 # Run the tests.
 nextflow run "$workflowDir/main.nf" \
   -profile "test,$environmentProfile" \
@@ -75,12 +78,12 @@ nextflow run "$workflowDir/main.nf" \
   --sortThreads=1 \
   --sortMemory="100 MB"
 assertEqual \
-  $(readsInBam "$workflowDir/test/test1_paired.bam") \
-  $(readsInOutputDir "$outDir/test1_paired.bam_fastqs") \
+  "$(readsInBam "$workflowDir/test/test1_paired.bam")" \
+  "$(readsInOutputDir "$outDir/test1_paired.bam_fastqs")" \
   "Read number in unsorted output FASTQs on paired-end input bam"
 assertEqual \
-  $(readsInBam "$workflowDir/test/test1_unpaired.bam") \
-  $(readsInOutputDir "$outDir/test1_unpaired.bam_fastqs") \
+  "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" \
+  "$(readsInOutputDir "$outDir/test1_unpaired.bam_fastqs")" \
   "Read number in unsorted output FASTQs on single-end input bam"
 
 nextflow run "$workflowDir/main.nf" \
@@ -95,12 +98,12 @@ nextflow run "$workflowDir/main.nf" \
   --sortThreads=1 \
   --sortMemory="100 MB"
 assertEqual \
-  $(readsInBam "$workflowDir/test/test1_paired.bam") \
-  $(readsInOutputDir "$outDir/test1_paired.bam_sorted_fastqs") \
+  "$(readsInBam "$workflowDir/test/test1_paired.bam")" \
+  "$(readsInOutputDir "$outDir/test1_paired.bam_sorted_fastqs")" \
   "Read number in sorted output FASTQs on paired-end input bam"
 assertEqual \
-  $(readsInBam "$workflowDir/test/test1_unpaired.bam") \
-  $(readsInOutputDir "$outDir/test1_unpaired.bam_sorted_fastqs") \
+  "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" \
+  "$(readsInOutputDir "$outDir/test1_unpaired.bam_sorted_fastqs")" \
   "Read number in sorted output FASTQs on single-end input bam"
 
 testFinished

@@ -39,22 +39,22 @@ mbuf () {
     local bufferSize="$1"
     shift
     assertNonEmpty "$bufferSize" "No buffer size defined for mbuf()" || return $?
-    "$MBUFFER_BINARY" -m "$bufferSize" -q -l /dev/null ${@}
+    "$MBUFFER_BINARY" -m "$bufferSize" -q -l /dev/null $@
 }
 
 lockFileName() {
   local resourceName="${1:?No resource name given}"
-  echo $(tmpDir)/"$resourceName.lock"
+  echo "$(tmpDir)/$resourceName.lock"
 }
 
 lockResource() {
   local resourceName="${1:?No resource name given}"
-  filelock $(lockFileName "$resourceName")
+  filelock "$(lockFileName "$resourceName")"
 }
 
 unlockResource() {
   local resourceName="${1:?No resource name given}"
-  local lockFileName=$(lockFileName "$resourceName")
+  local lockFileName="$(lockFileName "$resourceName")"
   if [[ ! -d "$lockFileName" ]]; then
       throw "Trying to remove non-directory lock: '$lockFileName'" 1
   fi
@@ -68,14 +68,14 @@ tmpFiles() {
 registerTmpFile() {
     local tmpFile="${1:?No temporary file name to register}"
     lockResource "tmpFiles"
-    echo "$tmpFile" >> $(tmpFiles)
+    echo "$tmpFile" >> "$(tmpFiles)"
     unlockResource "tmpFiles"
 }
 
 ## Always return a default read group, in case the file has no read groups annotated. This ensures that Roddy will create appropriate directories.
 ## But we need to make sure that there is no 'default' group already in the BAM header!
 assertNoDefaultReadGroup() {
-    declare -a groups=($@)
+    declare -a groups=( $@ )
     if (echo "${groups[@]}" | grep -w default); then
         echo "BAM mentions a 'default' read group in its header. This clashes with the default read-group name in Biobambam"
         exit 2
@@ -84,7 +84,7 @@ assertNoDefaultReadGroup() {
 
 getReadGroups() {
   local bamFile="${1:?No BAM file given}"
-  declare -a groups=$($SAMTOOLS_BINARY view -H "${bamFile:?No input file given}" | grep -P '^@RG\s' | perl -ne 's/^\@RG\s+ID:(\S+).*?$/$1/; print' 2> /dev/null)
+  declare -a groups=( "$($SAMTOOLS_BINARY view -H "${bamFile:?No input file given}" | grep -P '^@RG\s' | perl -ne 's/^\@RG\s+ID:(\S+).*?$/$1/; print' 2> /dev/null)" )
   assertNoDefaultReadGroup "${groups[@]}"
   echo "${groups[@]}"
   echo "default"
@@ -94,7 +94,7 @@ composeFastqFiles() {
   local outputDir="${1:?No output directory given}"
   local fastqSuffix=${2:?No FASTQ suffix given}
   shift 2
-  declare -a readGroups=( "$@" )
+  declare -a readGroups=( $@ )
   declare -a readFileTypes=("R1" "R2" "U1" "U2" "S")
   for rg in "${readGroups[@]}"; do
     for rft in "${readFileTypes[@]}"; do
@@ -112,17 +112,18 @@ setUp_BashSucksVersion() {
     mkdir -p "$(tmpDir)"
 
     lockResource "tmpFiles"
-    echo "$ARRAY_ELEMENT_DUMMY" > $(tmpFiles)
+    echo "$ARRAY_ELEMENT_DUMMY" > "$(tmpFiles)"
     unlockResource "tmpFiles"
 
-    # Remove all registered temporary files upon exit
-    trap "cleanUp_BashSucksVersion; rm \"$(tmpFiles)\"; rmdir \"$(tmpDir)\"" EXIT
+    # Remove all registered temporary files upon exit.
+    trap 'cleanUp_BashSucksVersion; rm "$(tmpFiles)"; rmdir "$(tmpDir)"' EXIT
 }
 cleanUp_BashSucksVersion() {
     lockResource "tmpFiles"
-    declare -a tmpFiles=( $(tac $(tmpFiles)) )
+    declare -a tmpFiles=( $(tac "$(tmpFiles)") )
     if [[ $(isDebugSet) == "false" && -v tmpFiles && ${#tmpFiles[@]} -gt 1 ]]; then
-        for f in ${tmpFiles[@]}; do
+        for f in "${tmpFiles[@]}"; do
+            echo "Cleaning up '$f'" >> /dev/stderr
             if [[ "$f" == "$ARRAY_ELEMENT_DUMMY" ]]; then
                 continue
             elif [[ -d "$f" ]]; then
@@ -131,7 +132,7 @@ cleanUp_BashSucksVersion() {
                 rm -f "$f"
             fi
         done
-        echo "$ARRAY_ELEMENT_DUMMY" > $(tmpFiles)
+        echo "$ARRAY_ELEMENT_DUMMY" > "$(tmpFiles)"
     fi
     unlockResource "tmpFiles"
 }
@@ -141,7 +142,7 @@ setUp() {
     mkdir -p "$(tmpDir)"
 
     lockResource "tmpFiles"
-    cat /dev/null > $(tmpFiles)
+    cat /dev/null > "$(tmpFiles)"
     unlockResource "tmpFiles"
 
      # Remove all registered temporary files upon exit
@@ -149,7 +150,7 @@ setUp() {
 }
 cleanUp() {
     lockResource "tmpFiles"
-    declare -a tmpFiles=( $(tac $(tmpFiles)) )
+    declare -a tmpFiles=( $(tac "$(tmpFiles)") )
     if [[ $(isDebugSet) == "false" && -v tmpFiles && ${#tmpFiles[@]} -gt 0 ]]; then
         for f in "${tmpFiles[@]}"; do
             if [[ -d "$f" ]]; then
@@ -158,7 +159,7 @@ cleanUp() {
                 rm "$f"
             fi
         done
-        cat /dev/null > $(tmpFiles)
+        cat /dev/null > "$(tmpFiles)"
     fi
     unlockResource "tmpFiles"
 }
@@ -189,7 +190,7 @@ ensureDirectoryExists() {
 
 tmpBaseFile() {
     local name="${1:?No filename given}"
-    echo $(tmpDir)/$(basename "$name")
+    echo "$(tmpDir)/$(basename "$name")"
 }
 
 createFifo() {
@@ -213,7 +214,7 @@ md5File() {
    assertNonEmpty "$inputFile"  "inputFile not defined" || return $?
    assertNonEmpty "$outputFile" "outputFile not defined" || return $?
 
-   local md5Fifo=$(tmpBaseFile "$md5File")".fifo"
+   local md5Fifo="$(tmpBaseFile "$md5File").fifo"
    createFifo "$md5Fifo"
 
    cat "$md5Fifo" \
@@ -232,12 +233,12 @@ md5File() {
 }
 
 checkMd5Files() {
-    local referenceFile="${1}"
-    assertNonEmpty "$referenceFile" "No reference MD5 file given"
+    local referenceMd5File="$1"
+    assertNonEmpty "$referenceMd5File" "No reference MD5 file given"
     local queryMd5File="$2"
     assertNonEmpty "$queryMd5File" "No query MD5 file given"
-    referMd5=$(cat "$referenceMd5File" | cut -f 1 -d ' ')
-    queryMd5=$(cat "$queryMd5File" | cut -f 1 -d ' ')
+    referMd5="$(cat "$referenceMd5File" | cut -f 1 -d ' ')"
+    queryMd5="$(cat "$queryMd5File" | cut -f 1 -d ' ')"
     if [[ "$referMd5" != "$queryMd5" ]]; then
         throw 10 "Reference MD5 in '$referenceMd5File' did not match actual MD5"
     fi
@@ -245,7 +246,7 @@ checkMd5Files() {
 
 compressionOption() {
     if [[ "${sortCompressor:-}" != "" ]]; then
-        echo "--compress-program" $sortCompressor
+        echo "--compress-program" "$sortCompressor"
     fi
 }
 
@@ -259,7 +260,7 @@ fastqDelinearize() {
 
 sortLinearizedFastqStream() {
     local tmpDir="${1:?No temporary directory prefix given}"
-    LC_ALL=C sort -t : -k 1d,1 -k 2n,2 -k 3d,3 -k 4n,4 -k 5n,5 -k 6n,6 -k 7n,7 -T "$tmpDir" $(compressionOption) --parallel=${sortThreads:-1} -S "${sortMemory:-100m}"
+    LC_ALL=C sort -t : -k 1d,1 -k 2n,2 -k 3d,3 -k 4n,4 -k 5n,5 -k 6n,6 -k 7n,7 -T "$tmpDir" $(compressionOption) --parallel="${sortThreads:-1}" -S "${sortMemory:-100m}"
 }
 
 eval "$WORKFLOWLIB___SHELL_OPTIONS"

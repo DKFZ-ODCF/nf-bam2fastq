@@ -20,18 +20,18 @@ sortFastqPair() {
     local outfile2="${4:?No output fastq 2 given}"
 
     # Ensure the output file directories exist. They are probably the same but I don't bother checking that.
-    ensureDirectoryExists $(dirname "$outfile1")
-    ensureDirectoryExists $(dirname "$outfile2")
+    ensureDirectoryExists "$(dirname "$outfile1")"
+    ensureDirectoryExists "$(dirname "$outfile2")"
 
     local decompressionCommand="cat"
     if [[ "${compressedInputFastqs:-true}" ]]; then
         decompressionCommand="$compressor -d"
     fi
 
-    local linear1Fifo=$(createFifo $(tmpBaseFile "$infile1")".linearized.fifo")
-    local linear2Fifo=$(createFifo $(tmpBaseFile "$infile2")".linearized.fifo")
-    local sorted1Fifo=$(createFifo $(tmpBaseFile "$outfile1")".sorted.fifo")
-    local sorted2Fifo=$(createFifo $(tmpBaseFile "$outfile2")".sorted.fifo")
+    local linear1Fifo="$(createFifo "$(tmpBaseFile "$infile1").linearized.fifo")"
+    local linear2Fifo="$(createFifo "$(tmpBaseFile "$infile2").linearized.fifo")"
+    local sorted1Fifo="$(createFifo "$(tmpBaseFile "$outfile1").sorted.fifo")"
+    local sorted2Fifo="$(createFifo "$(tmpBaseFile "$outfile2").sorted.fifo")"
 
     local linear1Pid
     $decompressionCommand "$infile1" \
@@ -66,7 +66,7 @@ sortFastqPair() {
         || throw 4 "Error delinearization 2"
 
     # Note that this temporary file directory must not be node-local. It contains too much data.
-    local sortTmp=$(dirname "$outfile1")"/sort_tmp"
+    local sortTmp="$(dirname "$outfile1")/sort_tmp"
     mkdir -p "$sortTmp"
     registerTmpFile "$sortTmp"
     registerTmpFile "$sortTmp/*"
@@ -98,14 +98,14 @@ sortFastqPairWithMd5Check() {
     local referenceMd5File2="$infile2.md5"
     if [[ -r "$referenceMd5File1" && -r "$referenceMd5File2" ]]; then
 
-        local tmpBase1=$(tmpBaseFile "$infile1")
-        local tmpBase2=$(tmpBaseFile "$infile2")
+        local tmpBase1="$(tmpBaseFile "$infile1")"
+        local tmpBase2="$(tmpBaseFile "$infile2")"
 
-        local infile1Fifo=$(createFifo "$tmpBase1.fifo")
-        local infile2Fifo=$(createFifo "$tmpBase2.fifo")
+        local infile1Fifo="$(createFifo "$tmpBase1.fifo")"
+        local infile2Fifo="$(createFifo "$tmpBase2.fifo")"
 
-        local tmpMd5File1=$(createTmpFile "$tmpBase1.md5.check")
-        local tmpMd5File2=$(createTmpFile "$tmpBase2.md5.check")
+        local tmpMd5File1="$(createTmpFile "$tmpBase1.md5.check")"
+        local tmpMd5File2="$(createTmpFile "$tmpBase2.md5.check")"
 
         local md51Pid
         cat "$infile1" \
@@ -147,4 +147,5 @@ else
 fi
 
 wait "$sortPid"
+
 cleanUp_BashSucksVersion
