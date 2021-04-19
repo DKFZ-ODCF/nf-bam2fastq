@@ -84,7 +84,7 @@ assertNoDefaultReadGroup() {
 
 getReadGroups() {
   local bamFile="${1:?No BAM file given}"
-  declare -a groups=( "$($SAMTOOLS_BINARY view -H "${bamFile:?No input file given}" | grep -P '^@RG\s' | perl -ne 's/^\@RG\s+ID:(\S+).*?$/$1/; print' 2> /dev/null)" )
+  declare -a groups=( $($SAMTOOLS_BINARY view -H "${bamFile:?No input file given}" | grep -P '^@RG\s' | perl -ne 's/^\@RG\s+ID:(\S+).*?$/$1/; print' 2> /dev/null) )
   assertNoDefaultReadGroup "${groups[@]}"
   echo "${groups[@]}"
   echo "default"

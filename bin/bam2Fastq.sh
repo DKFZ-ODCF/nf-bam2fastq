@@ -32,17 +32,6 @@ getFastqSuffix() {
     fi
 }
 
-fastqForGroupIndex() {
-    local fgindex="${1:?No filegroup index}"
-    declare -a files=( $(for fastq in "${unsortedFastqs[@]}"; do
-        echo "$fastq"
-    done | grep --color=no "$fgindex") )
-    if [[ ${#files[@]} != 1 ]]; then
-        throw 10 "Expected to find exactly 1 FASTQ for file-group index '$fgindex' -- found ${#files[@]}: ${files[*]}"
-    fi
-    echo "${files[0]}"
-}
-
 biobambamCompressFastqs() {
     if [[ "$compressFastqs" == true ]]; then
         echo 1
