@@ -48,7 +48,8 @@ sortFastqWithMd5Check() {
     if [[ ! -r "$referenceMd5File" ]]; then
         throw 50 "Cannot read MD5 file '$referenceMd5File'"
     else
-        local tmpInputMd5="$(createTmpFile "$(tmpBaseFile "$infile").md5.check")"
+        local tmpInputMd5="$(tmpBaseFile "$infile").md5.check"
+        createTmpFile "$tmpInputMd5"
         (cat "$infile" \
             | md5File "$tmpInputMd5" \
             | sortFastq /dev/stdin "$outfile" \

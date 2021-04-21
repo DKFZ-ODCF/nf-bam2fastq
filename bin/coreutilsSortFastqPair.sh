@@ -28,10 +28,14 @@ sortFastqPair() {
         decompressionCommand="$compressor -d"
     fi
 
-    local linear1Fifo="$(createFifo "$(tmpBaseFile "$infile1").linearized.fifo")"
-    local linear2Fifo="$(createFifo "$(tmpBaseFile "$infile2").linearized.fifo")"
-    local sorted1Fifo="$(createFifo "$(tmpBaseFile "$outfile1").sorted.fifo")"
-    local sorted2Fifo="$(createFifo "$(tmpBaseFile "$outfile2").sorted.fifo")"
+    local linear1Fifo="$(tmpBaseFile "$infile1").linearized.fifo"
+    createTmpFifo "$linear1Fifo"
+    local linear2Fifo="$(tmpBaseFile "$infile2").linearized.fifo"
+    createTmpFifo "$linear2Fifo"
+    local sorted1Fifo="$(tmpBaseFile "$outfile1").sorted.fifo"
+    createTmpFifo "$sorted1Fifo"
+    local sorted2Fifo="$(tmpBaseFile "$outfile2").sorted.fifo"
+    createTmpFifo "$sorted2Fifo"
 
     local linear1Pid
     $decompressionCommand "$infile1" \
@@ -101,11 +105,14 @@ sortFastqPairWithMd5Check() {
         local tmpBase1="$(tmpBaseFile "$infile1")"
         local tmpBase2="$(tmpBaseFile "$infile2")"
 
-        local infile1Fifo="$(createFifo "$tmpBase1.fifo")"
-        local infile2Fifo="$(createFifo "$tmpBase2.fifo")"
-
-        local tmpMd5File1="$(createTmpFile "$tmpBase1.md5.check")"
-        local tmpMd5File2="$(createTmpFile "$tmpBase2.md5.check")"
+        local infile1Fifo="$tmpBase1.fifo"
+        createTmpFifo "$infile1Fifo"
+        local infile2Fifo="$tmpBase2.fifo"
+        createTmpFifo "$infile2Fifo"
+        local tmpMd5File1="$tmpBase1.md5.check"
+        createTmpFile "$tmpMd5File1"
+        local tmpMd5File2="$tmpBase2.md5.check"
+        createTmpFile "tmpMd5File2"
 
         local md51Pid
         cat "$infile1" \
