@@ -90,7 +90,10 @@ To run the workflow with [Singularity](https://singularity.lbl.gov/), convert th
 ```bash
 # Convert the Docker image to Singularity.
 # Note that the image is stored in the current directory where it is then also expected by the "singularity" profile.
-singularity build nf-bam2fastq.sif docker-daemon://ghcr.io/dkfz-odcf/nf-bam2fastq:latest
+singularity \
+  build \
+  nf-bam2fastq.sif \
+  docker-daemon://ghcr.io/dkfz-odcf/nf-bam2fastq:latest
 
 # Run with the "singularity" profile
 nextflow run main.nf \
@@ -156,7 +159,12 @@ This is an outline of the procedure to release the container to Github Container
    ```
 2. Build the container.
   ```bash
-   docker build -t ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag --build-arg HTTP_PROXY=$HTTP_PROXY --build-arg HTTPS_PROXY=$HTTPS_PROXY ./
+   docker \
+      build \
+      -t ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag \
+      --build-arg HTTP_PROXY=$HTTP_PROXY \
+      --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+      ./
    ```
 3. Edit the version-tag for the docker container in the "docker"-profile in the nextflow.config to match `$versionTag`. 
 4. Run the integration test with the new container
