@@ -6,7 +6,7 @@ Convert BAM files back to FASTQ.
 
 ## Quickstart
 
-Provided you have a working Conda installation, you can run workflow with
+Provided you have a working [Conda](https://docs.conda.io/en/latest/) installation, you can run the workflow with
 
 ```bash
 mkdir test_out/
@@ -18,13 +18,13 @@ nextflow run main.nf \
     --sortFastqs=false
 ```
 
-For each BAM file in the comma-separated `--bamFileList` parameter, one directory with FASTQs is created in the `outputDir`. With the `local` profile the processing jobs will be executed locally. The `conda` profile will let Nextflow create a Conda environment from the `./task-environment.yml` file (by default in the `work/` directory).
+For each BAM file in the comma-separated `--input` parameter, one directory with FASTQs is created in the `outputDir`. With the `local` profile the processing jobs will be executed locally. The `conda` profile will let Nextflow create a Conda environment from the `task-environment.yml` file. By default the conda environment will be created in the execution directory (see [nextflow.config](https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/nextflow.config)).
 
 ## Remarks
 
-  * By default, the workflow sorts FASTQ files by their IDs to avoid e.g. that reads extracted from position-sorted BAMs are fed into the next processing step (possibly re-alignment) in a sorting order that may affect the processing. For instance, keeping position-based sorting order may result in systematic fluctuations of the average insert-size distributions in the FASTQ stream. Note, however, that most jobs of the workflow are actually sorting-jobs -- so you can save a lot of computation time, if the input order during alignment does not matter for you. And if you don't worry about such problems during alignment, you may save a lot of additional time during sorting of the already almost-sorted alignment output.
-  * Obviously, you can only reconstitute complete original FASTQs (except for order), if the BAM was not filtered in any way, e.g. by removing duplicated reads or read trimming.
-  * Paired-end FASTQs are generated with biobambam2's `bamtofastq`.
+  * By default, the workflow sorts FASTQ files by their IDs to avoid e.g. that reads extracted from position-sorted BAMs are fed into the next processing step (possibly re-alignment) in a sorting order that may affect the processing. For instance, keeping position-based sorting order may result in systematic fluctuations of the average insert-size distributions in the FASTQ stream. Note, however, that most jobs of the workflow are actually sorting-jobs -- so you can save a **lot** of computation time, if the input order during alignment does not matter for you. And if you don't worry about such problems during alignment, you may save a lot of additional time during sorting of the already almost-sorted alignment output.
+  * Obviously, you can only reconstitute complete original FASTQs (except for order), if the BAM was not filtered in any way, e.g. by removing duplicated reads, read trimming, of if the input file is truncated.
+  * Paired-end FASTQs are generated with [biobambam2](https://gitlab.com/german.tischler/biobambam2)'s `bamtofastq`.
   * Sorting is done with the UNIX coreutils tool "sort" in an efficient way (e.g. sorting per read-group; co-sorting of order-matched mate FASTQs).
 
 ## Status
@@ -41,11 +41,7 @@ Please have a look at the [project board](https://github.com/DKFZ-ODCF/nf-bam2fa
 ### Optional parameters
 
   * `sortFastqs`: Whether to produce FASTQs in a similar order as in the input BAM (`false`) or sort by name (`true`). Default: `true`. Turning sorting on produces multiple sort-jobs.
-  * `pairedEnd`: Data is paired-end (`true`) or single-end (`false`). Default: `true`
-  * `writeUnpairedFastqs`: Reads may have lost their mate, e.g. because of filtering or truncation of the BAM. By default, we let `bamtofastq` write these reads to files marked with a "_U{1,2}.fastq.gz" suffix.
   * `excludedFlags`: Comma-separated list of flags to `bamtofastq`'s `exclude` parameter. Default: "secondary,supplementary". If you have complete, BWA-aligned BAM files then exactly the reads of the input FASTQ are reproduced. For other aligners you need to check yourself, what are the optimal parameters.
-  * `outputPerReadGroup`: Whether reads from different read-groups should be written to different files. Default: true. Writing read groups into separate files reduces the time needed for sorting.
-  Default: `true`.
   * Trading memory vs. I/O
     * `sortMemory`: Memory used for sorting. Too large values are useless, unless you have enough memory to sort completely in-memory. Default: "100 MB".
     * `sortThreads`: Number of threads used for sorting. Default: 4.
@@ -66,7 +62,11 @@ The read-group name is the name of the "@RG" attribute the reads in the file wer
   * U1, U2: orphaned reads, i.e. first or second reads marked as paired but with a missing mate.
   * S: single-end reads
 
-## More Examples
+These files are all always produced, independent of whether your data is actually single-end or paired-end. If no reads of any of these groups are present in the input BAM file, empty compressed files are produced. Note further that these files are produced for each read-group in your input BAM, plus the "default" read-group. If you have a BAM in which none of the reads are assigned to a read-group, then all reads can be found in the "default" read-group.
+
+## Using Containers
+
+Sometimes, it is easiest to run the workflow in Docker or Singularity containers. We provide ready-made containers at [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages).
 
 ### Run with Docker
 
@@ -81,11 +81,11 @@ nextflow run main.nf \
     --sortFastqs=true
 ```
 
-This will automatically download the container from Github Container Registry.
+This will automatically download the container from [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages).
 
 ### Run with Singularity
 
-To run the workflow with [Singularity](https://singularity.lbl.gov/), convert the previously build Docker container to Singularity:
+To run the workflow with [Singularity](https://singularity.lbl.gov/), convert the Docker container to Singularity:
 
 ```bash
 # Convert the Docker image to Singularity.
@@ -143,17 +143,15 @@ The integration tests can be run with
 test/test1.sh test-results/ $profile
 ```
 
-This will create a test environment with `nextflow` (using Conda) and run the tests. For the test itself you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. 
-
-The integration tests are also run in Travis CI.
+This will create a test Conda environment in `test-results/nextflowEnv` and then run the tests. For the tests itself you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. These integration tests are also run in Travis CI.
 
 ## Manual container release
 
-The container contains a Conda installation and is pretty big. It should only be released if its content is actually changed. For instance, it would be perfectly fine to have a workflow version 1.6.5 but still use the container for 1.2.7.
+The container includes a Conda installation and is pretty big. It should only be released if its content is actually changed. For instance, it would be perfectly fine to have a workflow version 1.6.5 but still refer to an old container for 1.2.7.
 
-This is an outline of the procedure to release the container to Github Container Registry:
+This is an outline of the procedure to release the container to [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages):
 
-1. Set the version that you want to release as variable.
+1. Set the version that you want to release as variable. For the later commands you can set the Bash variable
    ```bash
    versionTag=1.0.0
    ```

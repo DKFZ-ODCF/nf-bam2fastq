@@ -15,9 +15,6 @@ params.outputDir
 /** Whether to sort the output FASTQs. */
 params.sortFastqs = true
 
-/** Write a file with unpaired reads. */
-params.writeUnpairedFastq = false
-
 /** Alignments with these flags are excluded. Comma delimited list (interpreted as bash array) of the following values:
  *  secondary, supplementary. */
 params.excludedFlags = "secondary,supplementary"
@@ -53,7 +50,6 @@ params.debug = false
 
 allowedParameters = ['input', 'outputDir',
                      'sortFastqs', 'sortMemory', 'sortThreads',
-                     'writeUnpairedFastq',
                      'compressIntermediateFastqs', 'compressorThreads',
                      'excludedFlags', 'checkIntermediateFastqMd5',
                      'debug']
@@ -115,8 +111,7 @@ process bamToFastq {
 
     shell:
     """
-    writeUnpairedFastq="$params.writeUnpairedFastq" \
-        excludedFlags="(${params.excludedFlags.split(",").join(" ")})" \
+    excludedFlags="(${params.excludedFlags.split(",").join(" ")})" \
         compressor="$compressor" \
         compressorThreads="$params.compressorThreads" \
         compressFastqs="$compressBamToFastqOutput" \

@@ -15,9 +15,6 @@
 #
 # excludedFlags:
 #   space delimited list flags for reads to exclude during processing of: secondary, supplementary
-#
-# writeUnpairedFastq:
-#   Additionally write a FASTQ with unpaired reads. Otherwise no such file is written.
 
 source "workflowLib.sh"
 printInfo
