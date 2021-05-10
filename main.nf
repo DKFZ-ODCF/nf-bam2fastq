@@ -79,7 +79,7 @@ def sortedFastqFile(String outDir, Path unsortedFastq, Boolean compressed) {
 
 log.info """
 ==================================
-= Bam2Fastq                      =
+= nf-bam2fastq                   =
 ==================================
 ${allowedParameters.collect { "$it = ${params.get(it)}" }.join("\n")}
 
