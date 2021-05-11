@@ -18,7 +18,7 @@ nextflow run main.nf \
     --sortFastqs=false
 ```
 
-For each BAM file in the comma-separated `--input` parameter, one directory with FASTQs is created in the `outputDir`. With the `local` profile the processing jobs will be executed locally. The `conda` profile will let Nextflow create a Conda environment from the `task-environment.yml` file. By default the conda environment will be created in the execution directory (see [nextflow.config](https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/nextflow.config)).
+For each BAM file in the comma-separated `--input` parameter, one directory with FASTQs is created in the `outputDir`. With the `local` profile the processing jobs will be executed locally. The `conda` profile will let Nextflow create a Conda environment from the `task-environment.yml` file. By default, the conda environment will be created in the source directory of the workflow (see [nextflow.config](https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/nextflow.config)).
 
 ## Remarks
 
@@ -88,12 +88,15 @@ This will automatically download the container from [Github Container Registry](
 To run the workflow with [Singularity](https://singularity.lbl.gov/), convert the Docker container to Singularity:
 
 ```bash
+versionTag=1.0.0
+
+cd nf-bam2fastq
 # Convert the Docker image to Singularity.
-# Note that the image is stored in the current directory where it is then also expected by the "singularity" profile.
+# The singularity file is assumed to be in the workflow source directory. See nextflow.config.
 singularity \
   build \
-  nf-bam2fastq.sif \
-  docker-daemon://ghcr.io/dkfz-odcf/nf-bam2fastq:latest
+  nf-bam2fastq_$version.sif \
+  docker-daemon://ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag
 
 # Run with the "singularity" profile
 nextflow run main.nf \

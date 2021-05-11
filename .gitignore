@@ -1,6 +1,7 @@
 .idea
 .nextflow*
 work/
+conda_env
 test*
 *.txt
 *.txt.*
