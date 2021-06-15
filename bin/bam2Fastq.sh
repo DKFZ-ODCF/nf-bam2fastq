@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2020 DKFZ.
+# Copyright (c) 2021 DKFZ.
 #
 # Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/LICENSE.txt).
 #
@@ -15,9 +15,6 @@
 #
 # excludedFlags:
 #   space delimited list flags for reads to exclude during processing of: secondary, supplementary
-#
-# writeUnpairedFastq:
-#   Additionally write a FASTQ with unpaired reads. Otherwise no such file is written.
 
 source "workflowLib.sh"
 printInfo
@@ -32,17 +29,6 @@ getFastqSuffix() {
     fi
 }
 
-fastqForGroupIndex() {
-    local fgindex="${1:?No filegroup index}"
-    declare -a files=$(for fastq in ${unsortedFastqs[@]}; do
-        echo "$fastq"
-    done | grep --color=no "$fgindex")
-    if [[ ${#files[@]} != 1 ]]; then
-        throw 10 "Expected to find exactly 1 FASTQ for file-group index '$fgindex' -- found ${#files[@]}: ${files[@]}"
-    fi
-    echo "${files[0]}"
-}
-
 biobambamCompressFastqs() {
     if [[ "$compressFastqs" == true ]]; then
         echo 1
@@ -52,7 +38,7 @@ biobambamCompressFastqs() {
 }
 
 checkExclusions() {
-    declare -la flagList=($@)
+    declare -la flagList=( $@ )
     for flag in "${flagList[@]}"; do
        if [[ $(toLower "$flag") != "secondary" && $(toLower "$flag") != "supplementary" ]]; then
           throw 20 "Cannot set '$flag' flag."
@@ -63,7 +49,7 @@ checkExclusions() {
 bamtofastqExclusions() {
     declare -la _excludedFlags=("${excludedFlags[@]:-}")
     checkExclusions "${_excludedFlags[@]}"
-    toUpper $(stringJoin "," "${_excludedFlags[@]}")
+    toUpper "$(stringJoin "," "${_excludedFlags[@]}")"
 }
 
 processPairedEndWithReadGroups() {
@@ -79,7 +65,7 @@ processPairedEndWithReadGroups() {
     ## * requires collation to produce files split by read-groups
     ##
     mkdir -p "$outputDir"
-    local tempFile="$outputDir/"$(basename ""$bamFile"")".bamtofastq_tmp"
+    local tempFile="$outputDir/$(basename "$bamFile").bamtofastq_tmp"
     $BIOBAMBAM_BAM2FASTQ_BINARY \
         filename="$bamFile" \
         T="$tempFile" \
@@ -87,7 +73,7 @@ processPairedEndWithReadGroups() {
         outputperreadgrouprgsm=0 \
         outputdir="$outputDir/" \
         collate=1 \
-        gz=$(biobambamCompressFastqs) \
+        gz="$(biobambamCompressFastqs)" \
         outputperreadgroupsuffixF=_R1."$FASTQ_SUFFIX" \
         outputperreadgroupsuffixF2=_R2."$FASTQ_SUFFIX" \
         outputperreadgroupsuffixO=_U1."$FASTQ_SUFFIX" \
@@ -98,7 +84,7 @@ processPairedEndWithReadGroups() {
 
 
 ensureAllFiles() {
-    declare -a files=( "$@" )
+    declare -a files=( $@ )
     for f in "${files[@]}"; do
         if [[ ! -f "$f" ]]; then
             cat /dev/null | gzip -c - > "$f"
@@ -117,8 +103,8 @@ main() {
     declare -ax excludedFlags=${excludedFlags}
 
     FASTQ_SUFFIX=$(getFastqSuffix)
-    declare -ax readGroups=( $(getReadGroups "$bamFile") )
-    declare -ax unsortedFastqs=( $(composeFastqFiles "$outputDir" "$FASTQ_SUFFIX" "${readGroups[@]}") )
+    declare -ax readGroups=( "$(getReadGroups "$bamFile")" )
+    declare -ax unsortedFastqs=( "$(composeFastqFiles "$outputDir" "$FASTQ_SUFFIX" "${readGroups[@]}")" )
 
     processPairedEndWithReadGroups "$bamFile" "$outputDir"
     ensureAllFiles "${unsortedFastqs[@]}"

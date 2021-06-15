@@ -2,6 +2,8 @@
 *.png{,.*}
 *.html
 *.txt{,.*}
-test
-test_out
+test*
 work
+.nextflow*
+.idea
+.travis.yml

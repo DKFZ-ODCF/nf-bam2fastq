@@ -12,4 +12,4 @@ before_script:
   - docker pull continuumio/miniconda3
 
 script:
-  - docker run --mount type=bind,source=$PWD,destination=/workflow continuumio/miniconda3 /bin/bash -c "cd /workflow; test/test1.sh test-results/ test-results/env/"
+  - docker run --mount type=bind,source=$PWD,destination=/workflow continuumio/miniconda3 /bin/bash -c "cd /workflow; test/test1.sh test-results/"

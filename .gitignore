@@ -1,7 +1,8 @@
 .idea
 .nextflow*
 work/
-test_out/
+conda_env
+test*
 *.txt
 *.txt.*
 *.png
@@ -10,4 +11,6 @@ test_out/
 *.html.*
 *~
 *.sif
+.travis.yml
+.git
 

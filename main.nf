@@ -1,5 +1,5 @@
 /**
- *  Copyright (c) 2020 DKFZ.
+ *  Copyright (c) 2021 DKFZ.
  *
  *  Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/LICENSE.txt).
  *
@@ -7,16 +7,13 @@
  */
 
 /** Comma-separated list of input BAMs */
-params.bamFiles
+params.input
 
 /** Path to which data should be written. One subdirectory per input BAM. */
 params.outputDir
 
 /** Whether to sort the output FASTQs. */
 params.sortFastqs = true
-
-/** Write a file with unpaired reads. */
-params.writeUnpairedFastq = false
 
 /** Alignments with these flags are excluded. Comma delimited list (interpreted as bash array) of the following values:
  *  secondary, supplementary. */
@@ -41,7 +38,7 @@ params.compressorThreads = 4
 
 /** Memory used for storing data while sorting. Is passed to the sorting tool and should follow its required syntax.
  *  WARNING: Also adapt the job requirements! */
-params.sortMemory = 1.GB
+params.sortMemory = "1 GB"
 
 /** The number of parallel threads used for sorting. */
 params.sortThreads = 4
@@ -51,14 +48,16 @@ params.debug = false
 
 
 
-allowedParameters = ['bamFiles', 'outputDir',
+allowedParameters = ['input', 'outputDir',
                      'sortFastqs', 'sortMemory', 'sortThreads',
-                     'writeUnpairedFastq',
                      'compressIntermediateFastqs', 'compressorThreads',
                      'excludedFlags', 'checkIntermediateFastqMd5',
                      'debug']
 
 checkParameters(params, allowedParameters)
+
+// The sorting memory is used as MemoryUnit in the code below.
+sortMemory = new MemoryUnit(params.sortMemory)
 
 
 def fastqSuffix(Boolean compressed) {
@@ -80,7 +79,7 @@ def sortedFastqFile(String outDir, Path unsortedFastq, Boolean compressed) {
 
 log.info """
 ==================================
-= Bam2Fastq                      =
+= nf-bam2fastq                   =
 ==================================
 ${allowedParameters.collect { "$it = ${params.get(it)}" }.join("\n")}
 
@@ -88,7 +87,7 @@ ${allowedParameters.collect { "$it = ${params.get(it)}" }.join("\n")}
 
 
 bamFiles_ch = Channel.
-        fromPath(params.bamFiles.split(',') as List<String>,
+        fromPath(params.input.split(',') as List<String>,
                  checkIfExists: true)
 
 
@@ -112,8 +111,7 @@ process bamToFastq {
 
     shell:
     """
-    writeUnpairedFastq="$params.writeUnpairedFastq" \
-        excludedFlags="(${params.excludedFlags.split(",").join(" ")})" \
+    excludedFlags="(${params.excludedFlags.split(",").join(" ")})" \
         compressor="$compressor" \
         compressorThreads="$params.compressorThreads" \
         compressFastqs="$compressBamToFastqOutput" \
@@ -150,7 +148,7 @@ unpairedFastqs_ch = readsFilesB_ch.flatMap {
 
 process nameSortUnpairedFastqs {
     cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads : 0 )  }
-    memory { params.sortMemory * params.sortThreads * 1.2 }
+    memory { (sortMemory + 100.MB) * params.sortThreads * 1.2 }
     // TODO Make runtime dependent on file-size.
     time { 24.hour * (2**task.attempt - 1) }
     maxRetries 2
@@ -176,7 +174,7 @@ process nameSortUnpairedFastqs {
         compressor="$compressor" \
         compressorThreads="$params.compressorThreads" \
         sortThreads="$params.sortThreads" \
-        sortMemory="${toSortMemoryString(params.sortMemory)}"	\
+        sortMemory="${toSortMemoryString(sortMemory)}"	\
         fastqFile="$fastq" \
         sortedFastqFile="$sortedFastqFile" \
         coreutilsSortFastqSingle.sh
@@ -187,7 +185,7 @@ process nameSortUnpairedFastqs {
 
 process nameSortPairedFastqs {
     cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads * 2 : 0) }
-    memory { params.sortMemory * params.sortThreads * 1.2 }
+    memory { (sortMemory + 100.MB) * params.sortThreads * 1.2 }
     // TODO Make runtime dependent on file-size.
     time { 24.hours * (2**task.attempt - 1) }
     maxRetries 2
@@ -214,7 +212,7 @@ process nameSortPairedFastqs {
         compressor="$compressor" \
         compressorThreads="$params.compressorThreads" \
         sortThreads="$params.sortThreads" \
-        sortMemory="${toSortMemoryString(params.sortMemory)}"	\
+        sortMemory="${toSortMemoryString(sortMemory)}"	\
         fastqFile1="$fastq1" \
         fastqFile2="$fastq2" \
         sortedFastqFile1="$sortedFastqFile1" \

@@ -5,7 +5,7 @@ channels:
   - defaults
 dependencies:
   - bash=5.0.018
-  - biobambam=2.0.87
+  - biobambam=2.0.179
   - mbuffer=20160228
   - perl=5.22.2.1
   - pigz=2.3.4

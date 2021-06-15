@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2020 DKFZ.
+# Copyright (c) 2021 DKFZ.
 #
 # Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/LICENSE.txt).
 #
@@ -13,7 +13,7 @@
 #             * "$compressor -d < compressed > uncompressed"
 # compressIntermediateFastqs: true/false. Default: true. $compressor is used for decompression.
 
-source $(dirname $(readlink -f "$0"))/"workflowLib.sh"
+source "$(dirname "$(readlink -f "$0")")/workflowLib.sh"
 
 printInfo
 set -o pipefail
@@ -24,7 +24,7 @@ sortFastq() {
     local infile="${1:-/dev/stdin}"
     local outfile="${2:-/dev/stdout}"
 
-    ensureDirectoryExists $(dirname "$outfile")
+    ensureDirectoryExists "$(dirname "$outfile")"
 
     local decompressionCommand="cat"
     if [[ "${compressIntermediateFastqs:-true}" ]]; then
@@ -33,7 +33,7 @@ sortFastq() {
 
     ($decompressionCommand "$infile" \
         | fastqLinearize \
-        | sortLinearizedFastqStream $(basename "$infile") \
+        | sortLinearizedFastqStream "$(basename "$infile")" \
         | fastqDelinearize \
         | $compressor \
         | md5File "$outfile.md5" \
@@ -48,7 +48,8 @@ sortFastqWithMd5Check() {
     if [[ ! -r "$referenceMd5File" ]]; then
         throw 50 "Cannot read MD5 file '$referenceMd5File'"
     else
-        local tmpInputMd5=$(createTmpFile $(tmpBaseFile "$infile")".md5.check")
+        local tmpInputMd5="$(tmpBaseFile "$infile").md5.check"
+        createTmpFile "$tmpInputMd5"
         (cat "$infile" \
             | md5File "$tmpInputMd5" \
             | sortFastq /dev/stdin "$outfile" \
@@ -72,4 +73,5 @@ fi
 sleep 15
 
 wait "$sortPid"
+
 cleanUp_BashSucksVersion
