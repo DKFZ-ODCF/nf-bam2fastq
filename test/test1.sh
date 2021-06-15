@@ -53,7 +53,7 @@ testFinished() {
   fi
 }
 
-# Setup the test environment (nextflow, samtools).
+# Setup the test environment (nextflow, samtools for getting the read-groups).
 mkdir -p "$outDir"
 if [[ ! -d "$nextflowEnvironment" ]]; then
   conda env create -v -f "$workflowDir/test-environment.yml" -p "$nextflowEnvironment"
@@ -64,6 +64,9 @@ set -ue
 
 # Keep memory footprint small
 export NXF_OPTS="-Xmx128m"
+
+# When using Conda, cache the workflow-tasks's environments in the test directory.
+export NXF_CONDA_CACHEDIR="$(readlink -f "$outDir/jobEnvs")"
 
 # Run the tests.
 nextflow run "$workflowDir/main.nf" \

@@ -64,11 +64,42 @@ The read-group name is the name of the "@RG" attribute the reads in the file wer
 
 These files are all always produced, independent of whether your data is actually single-end or paired-end. If no reads of any of these groups are present in the input BAM file, empty compressed files are produced. Note further that these files are produced for each read-group in your input BAM, plus the "default" read-group. If you have a BAM in which none of the reads are assigned to a read-group, then all reads can be found in the "default" read-group.
 
-## Using Containers
+## Environment and Execution
+
+[Nextflow](https://www.nextflow.io/docs/latest/config.html#config-profiles)'s `-profile` parameter allows setting technical options for executing the workflow. You have already seen some of the profiles and that these can be combined. We conceptually separated the predefined profiles into two types -- those concerning the "environment" and those for selecting the "executor".
+
+The following "environment" profiles that define which environment will be used for executing the jobs are predefined in the `nextflow.config`:
+* conda
+* docker
+* singularity
+* dkfzModules: This environment uses the environment modules available in the DKFZ Cluster.
+
+Currently, there are only two "executor" profiles that define the job execution method. These are
+* local: Just execute the jobs locally on the system that executes Nextflow.
+* lsf: Submit the jobs to an LSF cluster. Nextflow must be running on a cluster node on which `bsub` is available.
+
+Here another example, if you want to run the workflow as Singularity containers in an LSF cluster:
+
+```bash
+nextflow run main.nf \
+    -profile lsf,singularity \
+    -ansi-log \
+    --input=test/test1_paired.bam,test/test1_unpaired.bam \
+    --outputDir=test_out \
+    --sortFastqs=true
+```
+
+Please refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest/executor.html) for defining other executors. Note that environments and executors cannot arbitrarily be combined. For instance, your LSF administrators may not allow Docker to be executed by normal users.
+
+### Run with Conda
+
+We have shown how to execute the workflow with its Conda profile. If you want to share your installed Conda environments between multiple workflow runs or even with other users, you may want to use the `NXF_CONDA_CACHEDIR` environment variable. Make sure your users have read and execute permissions on the directories and read permissions on the files in the environment directory. Set `NXF_CONDA_CACHEDIR` to an absolute path to avoid "Not a conda environment:  path/to/env/nf-bam2fastq-3e98300235b5aed9f3835e00669fb59f" errors.
+
+### Using Containers
 
 Sometimes, it is easiest to run the workflow in Docker or Singularity containers. We provide ready-made containers at [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages).
 
-### Run with Docker
+#### Run with Docker
 
 You can run the workflow locally with Docker you can do e.g.
 
@@ -83,7 +114,7 @@ nextflow run main.nf \
 
 This will automatically download the container from [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages).
 
-### Run with Singularity
+#### Run with Singularity
 
 To run the workflow with [Singularity](https://singularity.lbl.gov/), convert the Docker container to Singularity:
 
@@ -107,32 +138,6 @@ nextflow run main.nf \
     --sortFastqs=true
 ```
 
-## Environment and Execution
-
-[Nextflow](https://www.nextflow.io/docs/latest/config.html#config-profiles)'s `-profile` parameter allows setting technical options for executing the workflow. You have already seen some of the profiles and that these can be combined. We conceptually separated the predefined profiles into two types -- those concerning the "environment" and those for selecting the "executor".
-
-The following "environment" profiles that define which environment will be used for executing the jobs are predefined in the `nextflow.config`:
-  * conda
-  * docker
-  * singularity
-  * dkfzModules: This environment uses the environment modules available in the DKFZ Cluster.
-
-Currently, there are only two "executor" profiles that define the job execution method. These are
-  * local: Just execute the jobs locally on the system that executes Nextflow.
-  * lsf: Submit the jobs to an LSF cluster. Nextflow must be running on a cluster node on which `bsub` is available.
-
-Here another example, if you want to run the workflow as Singularity containers in an LSF cluster:
-
-```bash
-nextflow run main.nf \
-    -profile lsf,singularity \
-    -ansi-log \
-    --input=test/test1_paired.bam,test/test1_unpaired.bam \
-    --outputDir=test_out \
-    --sortFastqs=true
-```
-
-Please refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest/executor.html) for defining other executors. Note that environments and executors cannot arbitrarily be combined. For instance, your LSF administrators may not allow Docker to be executed by normal users.
 
 ## Origins
 
