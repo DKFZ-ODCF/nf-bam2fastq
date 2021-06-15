@@ -185,7 +185,7 @@ This is an outline of the procedure to release the container to [Github Containe
 
 ## Release Notes
 
-* 1.0.0 (?., 2021)
+* 1.0.0 (June 15., 2021)
 
   * Adapted resource expressions to conservative values.
   * Reduced resources for integration tests (threads and memory).
