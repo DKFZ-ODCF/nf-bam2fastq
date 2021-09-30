@@ -98,7 +98,7 @@ process bamToFastq {
     cpus 1
     // The biobambam paper states something like 133 MB.
     memory 1.GB
-    time { 48.hours * (2**task.attempt - 1) }
+    time { 48.hours * 2**(task.attempt - 1) }
     maxRetries 2
 
     publishDir params.outputDir, enabled: !params.sortFastqs
@@ -150,7 +150,7 @@ process nameSortUnpairedFastqs {
     cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads : 0 )  }
     memory { (sortMemory + 100.MB) * params.sortThreads * 1.2 }
     // TODO Make runtime dependent on file-size.
-    time { 24.hour * (2**task.attempt - 1) }
+    time { 24.hour * 2**(task.attempt - 1) }
     maxRetries 2
 
     publishDir params.outputDir
@@ -187,7 +187,7 @@ process nameSortPairedFastqs {
     cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads * 2 : 0) }
     memory { (sortMemory + 100.MB) * params.sortThreads * 1.2 }
     // TODO Make runtime dependent on file-size.
-    time { 24.hours * (2**task.attempt - 1) }
+    time { 24.hours * 2**(task.attempt - 1) }
     maxRetries 2
 
     publishDir params.outputDir
@@ -241,7 +241,7 @@ void checkParameters(parameters, List<String> allowedParameters) {
     }
 }
 
-
+// Convert the configured sort memory from Nextflows MemoryUnit to a string for the `sort` tool.
 String toSortMemoryString(MemoryUnit mem) {
     def splitted = mem.toString().split(" ")
     String size = splitted[0]

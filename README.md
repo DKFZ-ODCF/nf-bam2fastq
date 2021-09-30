@@ -183,6 +183,10 @@ This is an outline of the procedure to release the container to [Github Containe
    docker image push ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag
    ```
 
+## Continuous Delivery
+
+For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job containers are automatically pushed to [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages) of the "ODCF" organization. Version tags should only be added to commits on the `master` branch, although currently no automatic rule enforces this.
+
 ## Release Notes
 
 * 1.0.0 (June 15., 2021)
