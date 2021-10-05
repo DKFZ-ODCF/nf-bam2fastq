@@ -274,5 +274,6 @@ String toSortMemoryString(MemoryUnit mem) {
 
 
 workflow.onComplete {
-    log.info "Success!"
+    println "Workflow run $workflow.runName completed at $workflow.complete with status " +
+            "${ workflow.success ? 'success' : 'failure' }"
 }
