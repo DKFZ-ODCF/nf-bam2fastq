@@ -1,6 +1,7 @@
 .idea
 .nextflow*
 work/
+cache/
 conda_env
 test*
 *.txt
@@ -13,4 +14,3 @@ test*
 *.sif
 .travis.yml
 .git
-
