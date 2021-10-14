@@ -189,6 +189,11 @@ For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job cont
 
 ## Release Notes
 
+* 1.0.1 (October 14., 2021)
+  * Patch: Fix memory calculation as exponential backoff
+  * Patch: Job names now contain workflow name and job/task hash. Run name seems currently not possible to include there (due to a possible bug in Nextflow).
+  * Patch: The end message when the workflow runs now reports whether the workflow execution failed (instead of always "success").
+
 * 1.0.0 (June 15., 2021)
 
   * Adapted resource expressions to conservative values.
