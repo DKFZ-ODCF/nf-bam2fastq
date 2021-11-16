@@ -4,7 +4,7 @@
 
 Convert BAM files back to FASTQ.
 
-## Quickstart
+## Quickstart with Conda
 
 Provided you have a working [Conda](https://docs.conda.io/en/latest/) installation, you can run the workflow with
 
@@ -19,6 +19,45 @@ nextflow run main.nf \
 ```
 
 For each BAM file in the comma-separated `--input` parameter, one directory with FASTQs is created in the `outputDir`. With the `local` profile the processing jobs will be executed locally. The `conda` profile will let Nextflow create a Conda environment from the `task-environment.yml` file. By default, the conda environment will be created in the source directory of the workflow (see [nextflow.config](https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/nextflow.config)).
+
+## Quickstart with Docker
+
+Dependent on the version of the workflow that you want to run it might not be possible to re-build the Conda environment. Therefore, to guarantee reproducibility we create [container images](https://github.com/orgs/DKFZ-ODCF/packages) of the task environment.
+
+For instance, if you want to run the workflow locally with Docker you can do e.g.
+
+```bash
+nextflow run main.nf \
+    -profile local,docker \
+    -ansi-log \
+    --input=test/test1_paired.bam,test/test1_unpaired.bam \
+    --outputDir=test_out \
+    --sortFastqs=true
+```
+
+## Quickstart with Singularity
+
+In your cluster, you may not have access to Docker. In this situation you can use [Singularity](https://singularity.lbl.gov/), if it installed in your cluster. Note that unfortunately, `nextflow` will fail to convert the Docker image into a Singularity image, unless Docker is available. But you can get the Singularity image yourself:
+
+1. Create a Singularity image from the public Docker container
+   ```bash
+   version=1.0.0
+   repoDir=/path/to/nf-bam2fastq
+   
+   singularity build \
+     "$repoDir/cache/singularity/nf-bam2fastq_$version.sif" \
+     "docker://ghcr.io/dkfz-odcf/nf-bam2fastq:$version"
+   ```
+   Note that the location and name of the Singularity image is configured in the `nextflow.config`.
+3. Now, you can run the workflow with the "singularity" profile, e.g. on an LSF cluster:
+   ```bash
+   nextflow run /path/to/nf-bam2fastq/main.nf \
+     -profile lsf,singularity \
+     -ansi-log \
+     --input=test/test1_paired.bam,test/test1_unpaired.bam \
+     --outputDir=test_out \
+     --sortFastqs=true
+   ```
 
 ## Remarks
 
@@ -64,6 +103,8 @@ The read-group name is the name of the "@RG" attribute the reads in the file wer
 
 These files are all always produced, independent of whether your data is actually single-end or paired-end. If no reads of any of these groups are present in the input BAM file, empty compressed files are produced. Note further that these files are produced for each read-group in your input BAM, plus the "default" read-group. If you have a BAM in which none of the reads are assigned to a read-group, then all reads can be found in the "default" read-group.
 
+Note that Nextflow creates the `work/` directory, the `.nextflow/` directory, and the `.nextflow.log*` files in the directory directory in which it is executed.
+
 ## Environment and Execution
 
 [Nextflow](https://www.nextflow.io/docs/latest/config.html#config-profiles)'s `-profile` parameter allows setting technical options for executing the workflow. You have already seen some of the profiles and that these can be combined. We conceptually separated the predefined profiles into two types -- those concerning the "environment" and those for selecting the "executor".
@@ -78,70 +119,15 @@ Currently, there are only two "executor" profiles that define the job execution 
 * local: Just execute the jobs locally on the system that executes Nextflow.
 * lsf: Submit the jobs to an LSF cluster. Nextflow must be running on a cluster node on which `bsub` is available.
 
-Here another example, if you want to run the workflow as Singularity containers in an LSF cluster:
-
-```bash
-nextflow run main.nf \
-    -profile lsf,singularity \
-    -ansi-log \
-    --input=test/test1_paired.bam,test/test1_unpaired.bam \
-    --outputDir=test_out \
-    --sortFastqs=true
-```
-
 Please refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest/executor.html) for defining other executors. Note that environments and executors cannot arbitrarily be combined. For instance, your LSF administrators may not allow Docker to be executed by normal users.
 
-### Run with Conda
+### Location of Environments
 
-We have shown how to execute the workflow with its Conda profile. If you want to share your installed Conda environments between multiple workflow runs or even with other users, you may want to use the `NXF_CONDA_CACHEDIR` environment variable. Make sure your users have read and execute permissions on the directories and read permissions on the files in the environment directory. Set `NXF_CONDA_CACHEDIR` to an absolute path to avoid "Not a conda environment:  path/to/env/nf-bam2fastq-3e98300235b5aed9f3835e00669fb59f" errors.
+By default the Conda environments of the jobs as well as the Singularity containers are stored in subdirectories of the `cache/` subdirectory of the workflows installation directory (a.k.a `projectDir` by Nextflow). 
 
-### Using Containers
+This is suited for either a user-specific installation or for a centralized installation for which the environments should be shared for all users. Please refer to the `nextflow.config` or the `NXF_*_CACHEDIR` environment variables to change this default (see [here](https://www.nextflow.io/docs/latest/config.html#environment-variables). 
 
-Sometimes, it is easiest to run the workflow in Docker or Singularity containers. We provide ready-made containers at [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages).
-
-#### Run with Docker
-
-You can run the workflow locally with Docker you can do e.g.
-
-```bash
-nextflow run main.nf \
-    -profile local,docker \
-    -ansi-log \
-    --input=test/test1_paired.bam,test/test1_unpaired.bam \
-    --outputDir=test_out \
-    --sortFastqs=true
-```
-
-This will automatically download the container from [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages).
-
-#### Run with Singularity
-
-To run the workflow with [Singularity](https://singularity.lbl.gov/), convert the Docker container to Singularity:
-
-```bash
-versionTag=1.0.0
-
-cd nf-bam2fastq
-# Convert the Docker image to Singularity.
-# The singularity file is assumed to be in the workflow source directory. See nextflow.config.
-singularity \
-  build \
-  nf-bam2fastq_$version.sif \
-  docker-daemon://ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag
-
-# Run with the "singularity" profile
-nextflow run main.nf \
-    -profile local,singularity \
-    -ansi-log \
-    --input=test/test1_paired.bam,test/test1_unpaired.bam \
-    --outputDir=test_out \
-    --sortFastqs=true
-```
-
-
-## Origins
-
-The workflow is a port of the Roddy-based [https://github.com/TheRoddyWMS/BamToFastqPlugin](BamToFastqPlugin). Compared to the Roddy-workflow, some problems with the execution of parallel processing, resulting in potential errors, have been fixed.
+Make sure your users have read and execute permissions on the directories and read permissions on the files in the shared environment directories. Set `NXF_CONDA_CACHEDIR` to an absolute path to avoid "Not a conda environment:  path/to/env/nf-bam2fastq-3e98300235b5aed9f3835e00669fb59f" errors.
 
 ## Development
 
@@ -153,7 +139,7 @@ test/test1.sh test-results/ $profile
 
 This will create a test Conda environment in `test-results/nextflowEnv` and then run the tests. For the tests itself you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. These integration tests are also run in Travis CI.
 
-## Manual container release
+### Manual container release
 
 The container includes a Conda installation and is pretty big. It should only be released if its content is actually changed. For instance, it would be perfectly fine to have a workflow version 1.6.5 but still refer to an old container for 1.2.7.
 
@@ -183,7 +169,7 @@ This is an outline of the procedure to release the container to [Github Containe
    docker image push ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag
    ```
 
-## Continuous Delivery
+### Continuous Delivery
 
 For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job containers are automatically pushed to [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages) of the "ODCF" organization. Version tags should only be added to commits on the `master` branch, although currently no automatic rule enforces this.
 
@@ -214,6 +200,9 @@ For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job cont
 
   * Working but not deeply tested base version 
 
+## Origins
+
+The workflow is a port of the Roddy-based [https://github.com/TheRoddyWMS/BamToFastqPlugin](BamToFastqPlugin). Compared to the Roddy-workflow, some problems with the execution of parallel processing, resulting in potential errors, have been fixed.
 
 ## License & Contributors
 
