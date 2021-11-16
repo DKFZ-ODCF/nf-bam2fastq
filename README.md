@@ -37,7 +37,7 @@ nextflow run main.nf \
 
 ## Quickstart with Singularity
 
-In your cluster, you may not have access to Docker. In this situation you can use [Singularity](https://singularity.lbl.gov/), if it installed in your cluster. Note that unfortunately, `nextflow` will fail to convert the Docker image into a Singularity image, unless Docker is available. But you can get the Singularity image yourself:
+In your cluster, you may not have access to Docker. In this situation you can use [Singularity](https://singularity.lbl.gov/), if it is installed in your cluster. Note that unfortunately, Nextflow will fail to convert the Docker image into a Singularity image, unless Docker is available. But you can get the Singularity image yourself:
 
 1. Create a Singularity image from the public Docker container
    ```bash
@@ -103,7 +103,7 @@ The read-group name is the name of the "@RG" attribute the reads in the file wer
 
 These files are all always produced, independent of whether your data is actually single-end or paired-end. If no reads of any of these groups are present in the input BAM file, empty compressed files are produced. Note further that these files are produced for each read-group in your input BAM, plus the "default" read-group. If you have a BAM in which none of the reads are assigned to a read-group, then all reads can be found in the "default" read-group.
 
-Note that Nextflow creates the `work/` directory, the `.nextflow/` directory, and the `.nextflow.log*` files in the directory directory in which it is executed.
+Note that Nextflow creates the `work/` directory, the `.nextflow/` directory, and the `.nextflow.log*` files in the directory in which it is executed.
 
 ## Environment and Execution
 
@@ -127,7 +127,7 @@ By default the Conda environments of the jobs as well as the Singularity contain
 
 This is suited for either a user-specific installation or for a centralized installation for which the environments should be shared for all users. Please refer to the `nextflow.config` or the `NXF_*_CACHEDIR` environment variables to change this default (see [here](https://www.nextflow.io/docs/latest/config.html#environment-variables). 
 
-Make sure your users have read and execute permissions on the directories and read permissions on the files in the shared environment directories. Set `NXF_CONDA_CACHEDIR` to an absolute path to avoid "Not a conda environment:  path/to/env/nf-bam2fastq-3e98300235b5aed9f3835e00669fb59f" errors.
+Make sure your users have read and execute permissions on the directories and read permissions on the files in the shared environment directories. Set `NXF_CONDA_CACHEDIR` to an absolute path to avoid "Not a conda environment: path/to/env/nf-bam2fastq-3e98300235b5aed9f3835e00669fb59f" errors.
 
 ## Development
 
@@ -137,7 +137,7 @@ The integration tests can be run with
 test/test1.sh test-results/ $profile
 ```
 
-This will create a test Conda environment in `test-results/nextflowEnv` and then run the tests. For the tests itself you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. These integration tests are also run in Travis CI.
+This will create a test Conda environment in `test-results/nextflowEnv` and then run the tests. For the tests themselves you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. These integration tests are also run in Travis CI.
 
 ### Manual container release
 
@@ -202,7 +202,7 @@ For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job cont
 
 ## Origins
 
-The workflow is a port of the Roddy-based [https://github.com/TheRoddyWMS/BamToFastqPlugin](BamToFastqPlugin). Compared to the Roddy-workflow, some problems with the execution of parallel processing, resulting in potential errors, have been fixed.
+The workflow is a port of the Roddy-based [BamToFastqPlugin](https://github.com/TheRoddyWMS/BamToFastqPlugin). Compared to the Roddy-workflow, some problems with the execution of parallel processing, resulting in potential errors, have been fixed.
 
 ## License & Contributors
 
