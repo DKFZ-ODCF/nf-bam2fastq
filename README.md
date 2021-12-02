@@ -81,6 +81,7 @@ Please have a look at the [project board](https://github.com/DKFZ-ODCF/nf-bam2fa
 
   * `sortFastqs`: Whether to produce FASTQs in a similar order as in the input BAM (`false`) or sort by name (`true`). Default: `true`. Turning sorting on produces multiple sort-jobs.
   * `excludedFlags`: Comma-separated list of flags to `bamtofastq`'s `exclude` parameter. Default: "secondary,supplementary". If you have complete, BWA-aligned BAM files then exactly the reads of the input FASTQ are reproduced. For other aligners you need to check yourself, what are the optimal parameters.
+  * `publishMode`: Nextflow's [publish mode](https://www.nextflow.io/docs/latest/process.html#publishdir). Allowed values are `symlink` , `rellink`, `link`, `copy`, `copyNoFollow`, `move`. Default is `rellink`, which produces relative links from the publish dir (in the `outputDir`) to the directories in the `work/` directory. This is to support an invocation of Nextflow in a "run" directory in which all files (symlinked input data, output data, logs) are stored together (e.g. with `nextflow run --outputDir ./`).
   * Trading memory vs. I/O
     * `sortMemory`: Memory used for sorting. Too large values are useless, unless you have enough memory to sort completely in-memory. Default: "100 MB".
     * `sortThreads`: Number of threads used for sorting. Default: 4.
@@ -174,6 +175,9 @@ This is an outline of the procedure to release the container to [Github Containe
 For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job containers are automatically pushed to [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages) of the "ODCF" organization. Version tags should only be added to commits on the `master` branch, although currently no automatic rule enforces this.
 
 ## Release Notes
+
+* 1.1.0 (November, 2021)
+  * Minor: Added `--publishMode` option to allow user selecting the [Nextflow publish mode](https://www.nextflow.io/docs/latest/process.html#publishdir). Default: rellink. Note that the former default was symlink, but as this change is considered negligible we classified the change as "minor".
 
 * 1.0.1 (October 14., 2021)
   * Patch: Fix memory calculation as exponential backoff
