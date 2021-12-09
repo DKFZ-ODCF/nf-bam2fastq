@@ -1,9 +1,0 @@
-*.iml
-*.png{,.*}
-*.html
-*.txt{,.*}
-test*
-work
-.nextflow*
-.idea
-.travis.yml
