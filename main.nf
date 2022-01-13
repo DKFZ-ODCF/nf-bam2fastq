@@ -46,35 +46,40 @@ params.sortThreads = 4
 /** Produce more output for debugging. */
 params.debug = false
 
+/** The Nextflow publish mode. See https://www.nextflow.io/docs/latest/process.html#publishdir */
+params.publishMode = "rellink"
 
 
+/** Parameter checking and casting code */
 allowedParameters = ['input', 'outputDir',
                      'sortFastqs', 'sortMemory', 'sortThreads',
                      'compressIntermediateFastqs', 'compressorThreads',
                      'excludedFlags', 'checkIntermediateFastqMd5',
-                     'debug']
+                     'debug', 'publishMode']
 
 checkParameters(params, allowedParameters)
 
 // The sorting memory is used as MemoryUnit in the code below.
 sortMemory = new MemoryUnit(params.sortMemory)
 
+/** See https://www.nextflow.io/docs/latest/process.html#publishdir */
+enum PublishMode {
+    symlink, // Absolute symbolic link in the published directory for each process output file.
+    rellink, // Relative symbolic link in the published directory for each process output file.
+    link,    // Hard link in the published directory for each process output file.
+    copy,    // Copies the output files into the published directory.
+    copyNoFollow, // Copies the output files into the published directory without following
+                  // symlinks ie. copies the links themselves.
+    move;     // Moves the output files into the published directory. Note: this is only supposed
+              // to be used for a terminating process i.e. a process whose output is not consumed
+              // by any other downstream process.
 
-def fastqSuffix(Boolean compressed) {
-    if (compressed)
-        return "fastq.gz"
-    else
-        return "fastq"
+    static PublishMode fromString(String str) throws IllegalArgumentException {
+        return str.toLowerCase() as PublishMode
+    }
 }
 
-
-def sortedFastqFile(String outDir, Path unsortedFastq, Boolean compressed) {
-    String result = outDir + "/" + unsortedFastq.getFileName().toString().replaceFirst(/\.fastq(?:\.gz)?$/, ".sorted.fastq")
-    if (compressed)
-        return result + ".gz"
-    else
-        return result
-}
+publishMode = PublishMode.fromString(params.publishMode)
 
 
 log.info """
@@ -86,6 +91,77 @@ ${allowedParameters.collect { "$it = ${params.get(it)}" }.join("\n")}
 """
 
 
+String fastqSuffix(Boolean compressed) {
+    if (compressed)
+        return "fastq.gz"
+    else
+        return "fastq"
+}
+
+
+String sortedFastqFile(String outDir, Path unsortedFastq, Boolean compressed) {
+    String result = outDir + "/" + unsortedFastq.getFileName().toString().replaceFirst(/\.fastq(?:\.gz)?$/, ".sorted.fastq")
+    if (compressed)
+        return result + ".gz"
+    else
+        return result
+}
+
+/** Check whether parameters are correct (names and values)
+ *
+ * @param parameters
+ * @param allowedParameters
+ */
+void checkParameters(parameters, List<String> allowedParameters) {
+    Set<String> unknownParameters = parameters.
+            keySet().
+            grep {
+                !it.contains('-') // Nextflow creates hyphenated versions of camel-cased parameters.
+            }.
+            minus(allowedParameters)
+    if (!unknownParameters.empty) {
+        log.error "There are unrecognized parameters: ${unknownParameters}"
+        exit(1)
+    }
+}
+
+/** Workflow supplementary code */
+
+/** Convert the configured sort memory from Nextflow's MemoryUnit to a string for the `sort` tool.
+ *
+ *  @param mem
+ * */
+String toSortMemoryString(MemoryUnit mem) {
+    def splitted = mem.toString().split(" ")
+    String size = splitted[0]
+    switch(splitted[1]) {
+        case "B":
+            return size + "b"
+            break
+        case "KB":
+            return size + "k"
+            break
+        case "MB":
+            return size + "m"
+            break
+        case "GB":
+            return size + "g"
+            break
+        case "PB":
+            return size + "p"
+            break
+        case "EB":
+            return size + "e"
+            break
+        case "ZB":
+            return size + "z"
+            break
+        default:
+            throw new RuntimeException("MemoryUnit produced unknown unit in '${mem.toString()}")
+    }
+}
+
+/** The actual workflow */
 bamFiles_ch = Channel.
         fromPath(params.input.split(',') as List<String>,
                  checkIfExists: true)
@@ -101,7 +177,7 @@ process bamToFastq {
     time { 48.hours * 2**(task.attempt - 1) }
     maxRetries 2
 
-    publishDir params.outputDir, enabled: !params.sortFastqs
+    publishDir params.outputDir, enabled: !params.sortFastqs, mode: publishMode.toString()
 
     input:
         file bamFile from bamFiles_ch
@@ -153,7 +229,7 @@ process nameSortUnpairedFastqs {
     time { 24.hour * 2**(task.attempt - 1) }
     maxRetries 2
 
-    publishDir params.outputDir
+    publishDir params.outputDir, mode: publishMode.toString()
 
     when:
         params.sortFastqs
@@ -220,56 +296,6 @@ process nameSortPairedFastqs {
         coreutilsSortFastqPair.sh
     """
 
-}
-
-
-/** Check whether parameters are correct (names and values)
- *
- * @param parameters
- * @param allowedParameters
- */
-void checkParameters(parameters, List<String> allowedParameters) {
-    Set<String> unknownParameters = parameters.
-            keySet().
-            grep {
-              !it.contains('-') // Nextflow creates hyphenated versions of camel-cased parameters.
-            }.
-            minus(allowedParameters)
-    if (!unknownParameters.empty) {
-        log.error "There are unrecognized parameters: ${unknownParameters}"
-        exit(1)
-    }
-}
-
-// Convert the configured sort memory from Nextflows MemoryUnit to a string for the `sort` tool.
-String toSortMemoryString(MemoryUnit mem) {
-    def splitted = mem.toString().split(" ")
-    String size = splitted[0]
-    switch(splitted[1]) {
-        case "B":
-            return size + "b"
-            break
-        case "KB":
-            return size + "k"
-            break
-        case "MB":
-            return size + "m"
-            break
-        case "GB":
-            return size + "g"
-            break
-        case "PB":
-            return size + "p"
-            break
-        case "EB":
-            return size + "e"
-            break
-        case "ZB":
-            return size + "z"
-            break
-        default:
-           throw new RuntimeException("MemoryUnit produced unknown unit in '${mem.toString()}")
-    }
 }
 
 
