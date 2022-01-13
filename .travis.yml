@@ -6,7 +6,7 @@ services:
 
 cache:
   directories:
-    - /workflow/test-results/env
+    - test-results/env
 
 before_script:
   - docker pull continuumio/miniconda3
