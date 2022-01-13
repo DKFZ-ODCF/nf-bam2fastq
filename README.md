@@ -177,7 +177,7 @@ For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job cont
 ## Release Notes
 
 * 1.1.0 (November, 2021)
-  * Minor: Added `--publishMode` option to allow user selecting the [Nextflow publish mode](https://www.nextflow.io/docs/latest/process.html#publishdir). Default: rellink. Note that the former default was symlink, but as this change is considered negligible we classified the change as "minor".
+  * Minor: Added `--publishMode` option to allow user selecting the [Nextflow publish mode](https://www.nextflow.io/docs/latest/process.html#publishdir). Default: `rellink`. Note that the former default was `symlink`, but as this change is considered negligible we classified the change as "minor".
 
 * 1.0.1 (October 14., 2021)
   * Patch: Fix memory calculation as exponential backoff

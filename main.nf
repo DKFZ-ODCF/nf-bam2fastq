@@ -128,6 +128,8 @@ void checkParameters(parameters, List<String> allowedParameters) {
 /** Workflow supplementary code */
 
 /** Convert the configured sort memory from Nextflow's MemoryUnit to a string for the `sort` tool.
+ *
+ *  @param mem
  * */
 String toSortMemoryString(MemoryUnit mem) {
     def splitted = mem.toString().split(" ")
