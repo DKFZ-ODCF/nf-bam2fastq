@@ -112,6 +112,7 @@ Note that Nextflow creates the `work/` directory, the `.nextflow/` directory, an
 
 The following "environment" profiles that define which environment will be used for executing the jobs are predefined in the `nextflow.config`:
 * conda
+* mamba
 * docker
 * singularity
 * dkfzModules: This environment uses the environment modules available in the DKFZ Cluster.
