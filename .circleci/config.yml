@@ -31,7 +31,7 @@ jobs:
       - save_cache:
           key: v1-job-env-{{ .Branch }}-{{ checksum "task-environment.yml" }}
           paths:
-            - test-results/jobEnvs/
+            - cache/conda/
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
