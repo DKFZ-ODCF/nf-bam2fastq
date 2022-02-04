@@ -12,5 +12,5 @@ test*
 *.html.*
 *~
 *.sif
-.travis.yml
+.circleci
 .git

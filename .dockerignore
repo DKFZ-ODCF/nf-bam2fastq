@@ -6,4 +6,4 @@ test*
 work
 .nextflow*
 .idea
-.travis.yml
+.circleci
