@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:4.9.2
+FROM continuumio/miniconda3:4.10.3
 
 LABEL maintainer="Philip R. Kensche <p.kensche@dkfz.de>"
 

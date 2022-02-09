@@ -5,7 +5,6 @@ cache/conda/*
 !cache/conda/.keep
 cache/singularity/*
 !cache/singularity/.keep
-conda_env
 *.txt
 *.txt.*
 *.png

@@ -187,6 +187,9 @@ For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job cont
 
 ## Release Notes
 
+* upcoming
+  * Minor: Updated to miniconda3:4.10.3 base container, because the previous version (4.9.2) didn't build anymore.
+
 * 1.1.0 (February, 2022)
   * Minor: Added `--publishMode` option to allow user to select the [Nextflow publish mode](https://www.nextflow.io/docs/latest/process.html#publishdir). Default: `rellink`. Note that the former default was `symlink`, but as this change is considered negligible we classified the change as "minor".
   * Minor: Removed `dkfzModules` profile. Didn't work well and was originally only for development. Please use 'conda', 'singularity' or 'docker'. The container-based environments provide the best reproducibility.
