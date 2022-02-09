@@ -189,6 +189,8 @@ For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job cont
 
 * upcoming
   * Minor: Updated to miniconda3:4.10.3 base container, because the previous version (4.9.2) didn't build anymore.
+  * Minor: Use `-env none` for "lsf" cluster profile. Local environment should not be copied. This probably caused problems with the old "dkfzModules" environment profile.
+  * Patch: Remove unnecessary `*_BINARY` variables in scripts. Binaries are fixed by Conda/containers.
 
 * 1.1.0 (February, 2022)
   * Minor: Added `--publishMode` option to allow user to select the [Nextflow publish mode](https://www.nextflow.io/docs/latest/process.html#publishdir). Default: `rellink`. Note that the former default was `symlink`, but as this change is considered negligible we classified the change as "minor".
