@@ -21,6 +21,7 @@ printInfo
 set -o pipefail
 set -uvex
 
+
 getFastqSuffix() {
     if [[ "$compressFastqs" == true ]]; then
         echo "fastq.gz"
@@ -66,7 +67,7 @@ processPairedEndWithReadGroups() {
     ##
     mkdir -p "$outputDir"
     local tempFile="$outputDir/$(basename "$bamFile").bamtofastq_tmp"
-    $BIOBAMBAM_BAM2FASTQ_BINARY \
+    bamtofastq \
         filename="$bamFile" \
         T="$tempFile" \
         outputperreadgroup=1 \
@@ -94,7 +95,7 @@ ensureAllFiles() {
 
 
 main() {
-    "$SAMTOOLS_BINARY" quickcheck "$bamFile"
+    samtools quickcheck "$bamFile"
 
     outputDir=${outputDir:-$(basename "$bamFile")"_fastqs"}
 

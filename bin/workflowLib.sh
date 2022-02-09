@@ -39,7 +39,7 @@ mbuf() {
   local bufferSize="$1"
   shift
   assertNonEmpty "$bufferSize" "No buffer size defined for mbuf()" || return $?
-  "$MBUFFER_BINARY" -m "$bufferSize" -q -l /dev/null $@
+  mbuffer -m "$bufferSize" -q -l /dev/null $@
 }
 
 lockFileName() {
@@ -84,7 +84,7 @@ assertNoDefaultReadGroup() {
 
 getReadGroups() {
   local bamFile="${1:?No BAM file given}"
-  declare -a groups=( $($SAMTOOLS_BINARY view -H "$bamFile" \
+  declare -a groups=( $(samtools view -H "$bamFile" \
     | grep -P '^@RG\s' \
     | perl -ne 's/^\@RG\s+ID:(\S+).*?$/$1/; print' \
     2>/dev/null) )
@@ -261,7 +261,7 @@ fastqLinearize() {
 }
 
 fastqDelinearize() {
-  "$PERL_BINARY" -aF\\t -lne '$F[0] =~ s/^(\S+?)(?:\/\d)?(?:\s+.*)?$/$1/o; print join("\n", @F)'
+  perl -aF\\t -lne '$F[0] =~ s/^(\S+?)(?:\/\d)?(?:\s+.*)?$/$1/o; print join("\n", @F)'
 }
 
 sortLinearizedFastqStream() {
