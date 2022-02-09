@@ -72,9 +72,6 @@ set -ue
 # Keep memory footprint small
 export NXF_OPTS="-Xmx128m"
 
-# When using Conda, cache the workflow-tasks's environments in the test directory.
-export NXF_CONDA_CACHEDIR="$(readlink -f "$outDir/jobEnvs")"
-
 # Run the tests.
 nextflow run "$workflowDir/main.nf" \
   -profile "test,$environmentProfile" \
