@@ -115,7 +115,6 @@ The following "environment" profiles that define which environment will be used 
 * mamba
 * docker
 * singularity
-* dkfzModules: This environment uses the environment modules available in the DKFZ Cluster.
 
 Currently, there are only two "executor" profiles that define the job execution method. These are
 * local: Just execute the jobs locally on the system that executes Nextflow.
@@ -125,7 +124,18 @@ Please refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest
 
 ### Location of Environments
 
-By default the Conda environments of the jobs as well as the Singularity containers are stored in subdirectories of the `cache/` subdirectory of the workflows installation directory (a.k.a `projectDir` by Nextflow). 
+By default the Conda environments of the jobs as well as the Singularity containers are stored in subdirectories of the `cache/` subdirectory of the workflows installation directory (a.k.a `projectDir` by Nextflow). E.g. to use the Singularity container you can install the container as follows
+
+```bash
+cd $workflowRepoDir
+# Refer to the nextflow.config for the name of the Singularity image.
+singularity build \
+  cache/singularity/nf-bam2fastq_1.0.0.sif \
+  docker-daemon://ghcr.io/dkfz-odcf/nf-bam2fastq:latest
+  
+# Test your container
+test/test1.sh test-results/ singularity nextflowEnv/
+```
 
 This is suited for either a user-specific installation or for a centralized installation for which the environments should be shared for all users. Please refer to the `nextflow.config` or the `NXF_*_CACHEDIR` environment variables to change this default (see [here](https://www.nextflow.io/docs/latest/config.html#environment-variables). 
 
@@ -177,9 +187,11 @@ For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job cont
 
 ## Release Notes
 
-* 1.1.0 (January, 2022)
+* 1.1.0 (February, 2022)
   * Minor: Added `--publishMode` option to allow user to select the [Nextflow publish mode](https://www.nextflow.io/docs/latest/process.html#publishdir). Default: `rellink`. Note that the former default was `symlink`, but as this change is considered negligible we classified the change as "minor".
+  * Minor: Removed `dkfzModules` profile. Didn't work well and was originally only for development. Please use 'conda', 'singularity' or 'docker'. The container-based environments provide the best reproducibility.
   * Patch: Switched from Travis to CircleCI for continuous integration.
+
 
 * 1.0.1 (October 14., 2021)
   * Patch: Fix memory calculation as exponential backoff
