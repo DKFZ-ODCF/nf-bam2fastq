@@ -7,3 +7,7 @@ work
 .nextflow*
 .idea
 .circleci
+cache
+.git
+.gitignore
+nextflowEnv
