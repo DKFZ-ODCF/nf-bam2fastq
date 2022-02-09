@@ -1,7 +1,10 @@
 .idea
 .nextflow*
 work/
-cache/
+cache/conda/*
+!cache/conda/.keep
+cache/singularity/*
+!cache/singularity/.keep
 conda_env
 test*
 *.txt
@@ -12,5 +15,5 @@ test*
 *.html.*
 *~
 *.sif
-.travis.yml
+.circleci
 .git

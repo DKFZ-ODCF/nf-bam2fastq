@@ -1,16 +1,23 @@
 #!/bin/bash
 #
-# Copyright (c) 2021 DKFZ.
+# Copyright (c) 2022 DKFZ.
 #
 # Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/LICENSE.txt).
 #
 
+set -x
 set -ue
 set -o pipefail
 
 outDir="${1:?No outDir set}"
 environmentProfile="${2:-conda}"
 nextflowEnvironment="${3:-$outDir/nextflowEnv}"
+
+if [[ "$environmentProfile" == "mamba" ]]; then
+  condaBinary=mamba
+else
+  condaBinary=conda
+fi
 
 workflowDir="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/..")"
 
@@ -56,7 +63,7 @@ testFinished() {
 # Setup the test environment (nextflow, samtools for getting the read-groups).
 mkdir -p "$outDir"
 if [[ ! -d "$nextflowEnvironment" ]]; then
-  conda env create -v -f "$workflowDir/test-environment.yml" -p "$nextflowEnvironment"
+  $condaBinary env create -v -f "$workflowDir/test-environment.yml" -p "$nextflowEnvironment"
 fi
 set +ue
 source activate "$nextflowEnvironment"

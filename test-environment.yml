@@ -7,4 +7,3 @@ dependencies:
   - bash=5.0.018
   - samtools=1.11
   - nextflow=20.10.0
-
