@@ -151,6 +151,10 @@ test/test1.sh test-results/ $profile
 
 This will create a test Conda environment in `test-results/nextflowEnv` and then run the tests. For the tests themselves you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. These integration tests are also run in Travis CI.
 
+### Continuous Delivery
+
+For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job containers are automatically pushed to [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages) of the "ODCF" organization. Version tags should only be added to commits on the `master` branch, although currently no automatic rule enforces this.
+
 ### Manual container release
 
 The container includes a Conda installation and is pretty big. It should only be released if its content is actually changed. For instance, it would be perfectly fine to have a workflow version 1.6.5 but still refer to an old container for 1.2.7.
@@ -159,7 +163,7 @@ This is an outline of the procedure to release the container to [Github Containe
 
 1. Set the version that you want to release as variable. For the later commands you can set the Bash variable
    ```bash
-   versionTag=1.0.0
+   versionTag=1.2.0
    ```
 2. Build the container.
   ```bash
@@ -170,20 +174,16 @@ This is an outline of the procedure to release the container to [Github Containe
       --build-arg HTTPS_PROXY=$HTTPS_PROXY \
       ./
    ```
-3. Edit the version-tag for the docker container in the "docker"-profile in the nextflow.config to match `$versionTag`. 
+3. Edit the version-tag for the docker container in the "docker"-profile in the `nextflow.config` to match `$versionTag`.
 4. Run the integration test with the new container
    ```bash
-   test/test1.sh docker-test docker-test/test-environment docker
+   test/test1.sh docker-test docker
    ```
 5. If the test succeeds, push the container to Github container registry. Set the CR_PAT variable to your personal access token (PAT):
    ```bash
    echo $CR_PAT | docker login ghcr.io -u vinjana --password-stdin
    docker image push ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag
    ```
-
-### Continuous Delivery
-
-For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job containers are automatically pushed to [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages) of the "ODCF" organization. Version tags should only be added to commits on the `master` branch, although currently no automatic rule enforces this.
 
 ## Release Notes
 
