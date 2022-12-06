@@ -6,6 +6,8 @@ Convert BAM files back to FASTQ.
 
 ## Quickstart with Conda
 
+We do not recommend Conda for running the workflow. It may happen that packages are not available in any channels anymore and that the environment is broken. For reproducible research, please use containers.
+
 Provided you have a working [Conda](https://docs.conda.io/en/latest/) installation, you can run the workflow with
 
 ```bash
@@ -190,6 +192,7 @@ This is an outline of the procedure to release the container to [Github Containe
 * 1.2.0
   * Minor: Updated to miniconda3:4.10.3 base container, because the previous version (4.9.2) didn't build anymore.
   * Minor: Use `-env none` for "lsf" cluster profile. Local environment should not be copied. This probably caused problems with the old "dkfzModules" environment profile.
+  * Patch: Require Nextflow >= 22.07.1, which fixes an LSF memory request bug. Added options for per-job memory requests to "lsf" profile in `nextflow.config`.
   * Patch: Remove unnecessary `*_BINARY` variables in scripts. Binaries are fixed by Conda/containers.
 
 * 1.1.0 (February, 2022)
