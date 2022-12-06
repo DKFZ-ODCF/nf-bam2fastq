@@ -4,6 +4,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
+  - mamba
   - bash=5.0.018
   - samtools=1.11
   - nextflow=22.10.1
