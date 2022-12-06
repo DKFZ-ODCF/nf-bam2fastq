@@ -194,12 +194,12 @@ This is an outline of the procedure to release the container to [Github Containe
   * Minor: Use `-env none` for "lsf" cluster profile. Local environment should not be copied. This probably caused problems with the old "dkfzModules" environment profile.
   * Patch: Require Nextflow >= 22.07.1, which fixes an LSF memory request bug. Added options for per-job memory requests to "lsf" profile in `nextflow.config`.
   * Patch: Remove unnecessary `*_BINARY` variables in scripts. Binaries are fixed by Conda/containers.
+  * Patch: Needed to explicitly set `conda.enabled = True` with newer Nextflow
 
 * 1.1.0 (February, 2022)
   * Minor: Added `--publishMode` option to allow user to select the [Nextflow publish mode](https://www.nextflow.io/docs/latest/process.html#publishdir). Default: `rellink`. Note that the former default was `symlink`, but as this change is considered negligible we classified the change as "minor".
   * Minor: Removed `dkfzModules` profile. Didn't work well and was originally only for development. Please use 'conda', 'singularity' or 'docker'. The container-based environments provide the best reproducibility.
   * Patch: Switched from Travis to CircleCI for continuous integration.
-
 
 * 1.0.1 (October 14., 2021)
   * Patch: Fix memory calculation as exponential backoff
