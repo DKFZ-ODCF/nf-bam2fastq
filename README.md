@@ -126,14 +126,14 @@ Please refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest
 
 ### Location of Environments
 
-By default the Conda environments of the jobs as well as the Singularity containers are stored in subdirectories of the `cache/` subdirectory of the workflows installation directory (a.k.a `projectDir` by Nextflow). E.g. to use the Singularity container you can install the container as follows
+By default, the Conda environments of the jobs as well as the Singularity containers are stored in subdirectories of the `cache/` subdirectory of the workflows installation directory (a.k.a `projectDir` by Nextflow). E.g. to use the Singularity container you can install the container as follows
 
 ```bash
 cd $workflowRepoDir
 # Refer to the nextflow.config for the name of the Singularity image.
 singularity build \
   cache/singularity/nf-bam2fastq_1.0.0.sif \
-  docker-daemon://ghcr.io/dkfz-odcf/nf-bam2fastq:latest
+  docker://ghcr.io/dkfz-odcf/nf-bam2fastq:1.0.0
   
 # Test your container
 test/test1.sh test-results/ singularity nextflowEnv/
