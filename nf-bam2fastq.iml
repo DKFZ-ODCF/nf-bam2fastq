@@ -12,6 +12,8 @@
       <excludeFolder url="file://$MODULE_DIR$/cache/conda/nf-bam2fastq-3e98300235b5aed9f3835e00669fb59f" />
       <excludeFolder url="file://$MODULE_DIR$/test/output-all" />
       <excludeFolder url="file://$MODULE_DIR$/.nextflow" />
+      <excludeFolder url="file://$MODULE_DIR$/cache" />
+      <excludeFolder url="file://$MODULE_DIR$/nextflowEnv" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -6,6 +6,8 @@ Convert BAM files back to FASTQ.
 
 ## Quickstart with Conda
 
+We do not recommend Conda for running the workflow. It may happen that packages are not available in any channels anymore and that the environment is broken. For reproducible research, please use containers.
+
 Provided you have a working [Conda](https://docs.conda.io/en/latest/) installation, you can run the workflow with
 
 ```bash
@@ -124,14 +126,14 @@ Please refer to the [Nextflow documentation](https://www.nextflow.io/docs/latest
 
 ### Location of Environments
 
-By default the Conda environments of the jobs as well as the Singularity containers are stored in subdirectories of the `cache/` subdirectory of the workflows installation directory (a.k.a `projectDir` by Nextflow). E.g. to use the Singularity container you can install the container as follows
+By default, the Conda environments of the jobs as well as the Singularity containers are stored in subdirectories of the `cache/` subdirectory of the workflows installation directory (a.k.a `projectDir` by Nextflow). E.g. to use the Singularity container you can install the container as follows
 
 ```bash
 cd $workflowRepoDir
 # Refer to the nextflow.config for the name of the Singularity image.
 singularity build \
   cache/singularity/nf-bam2fastq_1.0.0.sif \
-  docker-daemon://ghcr.io/dkfz-odcf/nf-bam2fastq:latest
+  docker://ghcr.io/dkfz-odcf/nf-bam2fastq:1.0.0
   
 # Test your container
 test/test1.sh test-results/ singularity nextflowEnv/
@@ -151,6 +153,10 @@ test/test1.sh test-results/ $profile
 
 This will create a test Conda environment in `test-results/nextflowEnv` and then run the tests. For the tests themselves you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. These integration tests are also run in Travis CI.
 
+### Continuous Delivery
+
+For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job containers are automatically pushed to [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages) of the "ODCF" organization. Version tags should only be added to commits on the `master` branch, although currently no automatic rule enforces this.
+
 ### Manual container release
 
 The container includes a Conda installation and is pretty big. It should only be released if its content is actually changed. For instance, it would be perfectly fine to have a workflow version 1.6.5 but still refer to an old container for 1.2.7.
@@ -159,7 +165,7 @@ This is an outline of the procedure to release the container to [Github Containe
 
 1. Set the version that you want to release as variable. For the later commands you can set the Bash variable
    ```bash
-   versionTag=1.0.0
+   versionTag=1.2.0
    ```
 2. Build the container.
   ```bash
@@ -170,10 +176,10 @@ This is an outline of the procedure to release the container to [Github Containe
       --build-arg HTTPS_PROXY=$HTTPS_PROXY \
       ./
    ```
-3. Edit the version-tag for the docker container in the "docker"-profile in the nextflow.config to match `$versionTag`. 
+3. Edit the version-tag for the docker container in the "docker"-profile in the `nextflow.config` to match `$versionTag`.
 4. Run the integration test with the new container
    ```bash
-   test/test1.sh docker-test docker-test/test-environment docker
+   test/test1.sh docker-test docker
    ```
 5. If the test succeeds, push the container to Github container registry. Set the CR_PAT variable to your personal access token (PAT):
    ```bash
@@ -181,20 +187,19 @@ This is an outline of the procedure to release the container to [Github Containe
    docker image push ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag
    ```
 
-### Continuous Delivery
-
-For all commits with a tag that follows the pattern `\d+\.\d+\.\d+` the job containers are automatically pushed to [Github Container Registry](https://github.com/orgs/DKFZ-ODCF/packages) of the "ODCF" organization. Version tags should only be added to commits on the `master` branch, although currently no automatic rule enforces this.
-
 ## Release Notes
 
-* upcoming
+* 1.2.0
   * Minor: Updated to miniconda3:4.10.3 base container, because the previous version (4.9.2) didn't build anymore.
+  * Minor: Use `-env none` for "lsf" cluster profile. Local environment should not be copied. This probably caused problems with the old "dkfzModules" environment profile.
+  * Patch: Require Nextflow >= 22.07.1, which fixes an LSF memory request bug. Added options for per-job memory requests to "lsf" profile in `nextflow.config`.
+  * Patch: Remove unnecessary `*_BINARY` variables in scripts. Binaries are fixed by Conda/containers.
+  * Patch: Needed to explicitly set `conda.enabled = True` with newer Nextflow
 
 * 1.1.0 (February, 2022)
   * Minor: Added `--publishMode` option to allow user to select the [Nextflow publish mode](https://www.nextflow.io/docs/latest/process.html#publishdir). Default: `rellink`. Note that the former default was `symlink`, but as this change is considered negligible we classified the change as "minor".
   * Minor: Removed `dkfzModules` profile. Didn't work well and was originally only for development. Please use 'conda', 'singularity' or 'docker'. The container-based environments provide the best reproducibility.
   * Patch: Switched from Travis to CircleCI for continuous integration.
-
 
 * 1.0.1 (October 14., 2021)
   * Patch: Fix memory calculation as exponential backoff
