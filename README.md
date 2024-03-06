@@ -197,6 +197,7 @@ This is an outline of the procedure to release the container to [Github Containe
   * Minor: Let Nextflow automatically create the cached Singularity image.
     > NOTE: The cached image name was changed to Nextflow's default name. If you want to prevent a re-conversion of the image, you may rename an existing image to `cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$version.img`.
   * Patch: Mention Conda only for development in `README.md`.
+  * Patch: Test-script now implements a simple backwards-compatibility test by comparing against old result files.
 
 * 1.2.0
   * Minor: Updated to miniconda3:4.10.3 base container, because the previous version (4.9.2) didn't build anymore.
