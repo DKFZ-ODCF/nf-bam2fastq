@@ -78,18 +78,18 @@ nextflow run "$workflowDir/main.nf" \
   -ansi-log \
   -resume \
   -work-dir "$outDir/work" \
-  --input="$workflowDir/test/test1_paired.bam,$workflowDir/test/test1_unpaired.bam" \
+  --input="$workflowDir/test/reference/test1_paired.bam,$workflowDir/test/reference/test1_unpaired.bam" \
   --outputDir="$outDir" \
   --sortFastqs=false \
   --compressorThreads=0 \
   --sortThreads=1 \
   --sortMemory="100 MB"
 assertEqual \
-  "$(readsInBam "$workflowDir/test/test1_paired.bam")" \
+  "$(readsInBam "$workflowDir/test/reference/test1_paired.bam")" \
   "$(readsInOutputDir "$outDir/test1_paired.bam_fastqs")" \
   "Read number in unsorted output FASTQs on paired-end input bam"
 assertEqual \
-  "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" \
+  "$(readsInBam "$workflowDir/test/reference/test1_unpaired.bam")" \
   "$(readsInOutputDir "$outDir/test1_unpaired.bam_fastqs")" \
   "Read number in unsorted output FASTQs on single-end input bam"
 
@@ -98,19 +98,27 @@ nextflow run "$workflowDir/main.nf" \
   -ansi-log \
   -resume \
   -work-dir "$outDir/work" \
-  --input="$workflowDir/test/test1_paired.bam,$workflowDir/test/test1_unpaired.bam" \
+  --input="$workflowDir/test/reference/test1_paired.bam,$workflowDir/test/reference/test1_unpaired.bam" \
   --outputDir="$outDir" \
   --sortFastqs=true \
   --compressorThreads=0 \
   --sortThreads=1 \
   --sortMemory="100 MB"
 assertEqual \
-  "$(readsInBam "$workflowDir/test/test1_paired.bam")" \
+  "$(readsInBam "$workflowDir/test/reference/test1_paired.bam")" \
   "$(readsInOutputDir "$outDir/test1_paired.bam_sorted_fastqs")" \
   "Read number in sorted output FASTQs on paired-end input bam"
 assertEqual \
-  "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" \
+  "$(readsInBam "$workflowDir/test/reference/test1_unpaired.bam")" \
   "$(readsInOutputDir "$outDir/test1_unpaired.bam_sorted_fastqs")" \
   "Read number in sorted output FASTQs on single-end input bam"
+
+for ref in reference/test*/*; do
+  out="$outDir/$(echo "$ref" | sed "s/reference//")"
+  assertEqual \
+    "$(zcat "$ref" | md5sum | cut -d' ' -f1)" \
+    "$(zcat "$out" | md5sum | cut -d' ' -f1)" \
+    "MD5 of $ref and $out"
+done
 
 testFinished
