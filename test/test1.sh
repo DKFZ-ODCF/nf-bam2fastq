@@ -10,7 +10,7 @@ set -ue
 set -o pipefail
 
 outDir="${1:?No outDir set}"
-environmentProfile="${2:-conda}"
+environmentProfile="${2:-singularity}"
 nextflowEnvironment="${3:-$outDir/nextflowEnv}"
 
 if [[ "$environmentProfile" == "mamba" ]]; then

@@ -162,10 +162,6 @@ String toSortMemoryString(MemoryUnit mem) {
 }
 
 /** The actual workflow */
-bamFiles_ch = Channel.
-        fromPath(params.input.split(',') as List<String>,
-                 checkIfExists: true)
-
 
 Boolean compressBamToFastqOutput = params.sortFastqs ? params.compressIntermediateFastqs : true
 
@@ -180,10 +176,10 @@ process bamToFastq {
     publishDir params.outputDir, enabled: !params.sortFastqs, mode: publishMode.toString()
 
     input:
-        file bamFile from bamFiles_ch
+        file bamFile
 
     output:
-        tuple file(bamFile), file("**/*.${fastqSuffix(compressBamToFastqOutput)}") into readsFiles_ch
+        tuple file(bamFile), file("**/*.${fastqSuffix(compressBamToFastqOutput)}")
 
     shell:
     """
@@ -199,29 +195,6 @@ process bamToFastq {
 
 }
 
-// Create two channels of matched paired-end and unmatched or single-end reads, each of tuples of (bam, fastq).
-readsFiles_ch.into { readsFilesA_ch; readsFilesB_ch }
-pairedFastqs_ch = readsFilesA_ch.flatMap {
-    def (bam, fastqs) = it
-    fastqs.grep { it.getFileName() =~ /.+_R[12]\.fastq(?:\.[^.]*)?$/ }.
-            groupBy { fastq -> fastq.getFileName().toString().replaceFirst("_R[12].fastq(?:.gz)?\$", "") }.
-            collect { key, files ->
-                assert files.size() == 2
-                files.sort()
-                [bam, files[0], files[1]]
-            }
-}
-
-
-// Unpaired FASTQs are unmatched or orphaned paired-reads (1 or 2) and singletons, i.e. unpaired reads.
-unpairedFastqs_ch = readsFilesB_ch.flatMap {
-    def (bam, fastqs) = it
-    fastqs.
-            grep { it.getFileName() =~ /.+_(U[12]|S)\.fastq(?:\.[^.]*)?$/ }.
-            collect { [bam, it] }
-}
-
-
 process nameSortUnpairedFastqs {
     cpus { params.sortThreads + (params.compressIntermediateFastqs ? params.compressorThreads : 0 )  }
     memory { (sortMemory + 100.MB) * params.sortThreads * 1.2 }
@@ -235,15 +208,14 @@ process nameSortUnpairedFastqs {
         params.sortFastqs
 
     input:
-        tuple file(bam), file(fastq) from unpairedFastqs_ch
+        tuple file(bam), file(fastq)
 
     output:
-        tuple file(bam), file(sortedFastqFile) into sortedUnpairedFastqs_ch
+        tuple file(bam), file(sortedFastqFile)
 
     script:
-    bamFileName = bam.getFileName().toString()
-    outDir = "${bamFileName}_sorted_fastqs"
-    sortedFastqFile = sortedFastqFile(outDir, fastq, true)
+    outDir = "${bam.getFileName().toString()}_sorted_fastqs" as String
+    sortedFastqFile = sortedFastqFile(outDir, fastq.toRealPath(), true)
     """
     mkdir -p "$outDir"
     compressedInputFastqs="$compressBamToFastqOutput" \
@@ -272,16 +244,15 @@ process nameSortPairedFastqs {
     params.sortFastqs
 
     input:
-    tuple file(bam), file(fastq1), file(fastq2) from pairedFastqs_ch
+    tuple file(bam), file(fastq1), file(fastq2)
 
     output:
-    tuple file(bam), file(sortedFastqFile1), file(sortedFastqFile2) into sortedPairedFastqs_ch
+    tuple file(bam), file(sortedFastqFile1), file(sortedFastqFile2)
 
     script:
-    bamFileName = bam.getFileName().toString()
-    outDir = "${bamFileName}_sorted_fastqs"
-    sortedFastqFile1 = sortedFastqFile(outDir, fastq1, true)
-    sortedFastqFile2 = sortedFastqFile(outDir, fastq2, true)
+    outDir = "${bam.getFileName().toString()}_sorted_fastqs" as String
+    sortedFastqFile1 = sortedFastqFile(outDir, fastq1.toRealPath(), true)
+    sortedFastqFile2 = sortedFastqFile(outDir, fastq2.toRealPath(), true)
     """
     mkdir -p "$outDir"
     compressedInputFastqs="$compressBamToFastqOutput" \
@@ -295,6 +266,39 @@ process nameSortPairedFastqs {
         sortedFastqFile2="$sortedFastqFile2" \
         coreutilsSortFastqPair.sh
     """
+
+}
+
+workflow {
+
+    bamFiles_ch = Channel.fromPath(params.input.split(',') as List<String>, checkIfExists: true)
+    readsFiles_ch = bamToFastq(bamFiles_ch)
+
+    pairedFastqs_ch = readsFiles_ch.flatMap {
+        def (bam, fastqs) = it
+        fastqs.grep {
+                    it.getFileName() =~ /.+_R[12]\.fastq(?:\.[^.]*)?$/
+                }.
+                groupBy { fastq ->
+                    fastq.getFileName().toString().replaceFirst("_R[12].fastq(?:.gz)?\$", "")
+                }.
+                collect { key, files ->
+                    assert files.size() == 2
+                    files.sort()
+                    [bam, files[0], files[1]]
+                }
+    }
+    nameSortPairedFastqs(pairedFastqs_ch)
+
+    // Unpaired FASTQs are unmatched or orphaned paired-reads (1 or 2) and singletons, i.e. unpaired reads.
+    unpairedFastqs_ch = readsFiles_ch.flatMap {
+        def (bam, fastqs) = it
+        fastqs.
+                grep { it.getFileName() =~ /.+_(U[12]|S)\.fastq(?:\.[^.]*)?$/ }.
+                collect { [bam, it] }
+    }
+    nameSortUnpairedFastqs(unpairedFastqs_ch)
+
 
 }
 

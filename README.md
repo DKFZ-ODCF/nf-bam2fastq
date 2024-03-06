@@ -4,24 +4,6 @@
 
 Convert BAM files back to FASTQ.
 
-## Quickstart with Conda
-
-We do not recommend Conda for running the workflow. It may happen that packages are not available in any channels anymore and that the environment is broken. For reproducible research, please use containers.
-
-Provided you have a working [Conda](https://docs.conda.io/en/latest/) installation, you can run the workflow with
-
-```bash
-mkdir test_out/
-nextflow run main.nf \
-    -profile local,conda \
-    -ansi-log \
-    --input=/path/to/your.bam \
-    --outputDir=test_out \
-    --sortFastqs=false
-```
-
-For each BAM file in the comma-separated `--input` parameter, one directory with FASTQs is created in the `outputDir`. With the `local` profile the processing jobs will be executed locally. The `conda` profile will let Nextflow create a Conda environment from the `task-environment.yml` file. By default, the conda environment will be created in the source directory of the workflow (see [nextflow.config](https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/nextflow.config)).
-
 ## Quickstart with Docker
 
 Dependent on the version of the workflow that you want to run it might not be possible to re-build the Conda environment. Therefore, to guarantee reproducibility we create [container images](https://github.com/orgs/DKFZ-ODCF/packages) of the task environment.
@@ -41,25 +23,47 @@ nextflow run main.nf \
 
 In your cluster, you may not have access to Docker. In this situation you can use [Singularity](https://singularity.lbl.gov/), if it is installed in your cluster. Note that unfortunately, Nextflow will fail to convert the Docker image into a Singularity image, unless Docker is available. But you can get the Singularity image yourself:
 
-1. Create a Singularity image from the public Docker container
-   ```bash
-   version=1.0.0
-   repoDir=/path/to/nf-bam2fastq
-   
-   singularity build \
-     "$repoDir/cache/singularity/nf-bam2fastq_$version.sif" \
-     "docker://ghcr.io/dkfz-odcf/nf-bam2fastq:$version"
-   ```
-   Note that the location and name of the Singularity image is configured in the `nextflow.config`.
-3. Now, you can run the workflow with the "singularity" profile, e.g. on an LSF cluster:
-   ```bash
-   nextflow run /path/to/nf-bam2fastq/main.nf \
-     -profile lsf,singularity \
-     -ansi-log \
-     --input=test/test1_paired.bam,test/test1_unpaired.bam \
-     --outputDir=test_out \
-     --sortFastqs=true
-   ```
+You can run the workflow with the "singularity" profile, e.g. on an LSF cluster:
+
+```bash
+nextflow run $repoDir/main.nf \
+ -profile lsf,singularity \
+ --input=$repoDir/test/test1_paired.bam,$repoDir/test/test1_unpaired.bam \
+ --outputDir=test_out \
+ --sortFastqs=true
+```
+
+Nextflow will automatically pull the Docker image, convert it into a Singularity image, put it at `$repoDir/cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$version.img`, and then run the workflow.
+
+> WARNING: Downloading the cached container is probably *not* concurrency-safe. If you run multiple workflows at the same time, all of them trying to cache the Singularity container, you will probably end up with a mess. In that case, download the container manually with following command to pull the container:
+> ```bash
+>  version=1.0.0
+>  repoDir=/path/to/nf-bam2fastq
+>   
+>  singularity build \
+>    "$repoDir/cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$version.img" \
+>    "docker://ghcr.io/dkfz-odcf/nf-bam2fastq:$version"
+>  ```
+
+## Quickstart with Conda
+
+> NOTE: Conda is a decent tool for building containers, although these containers tend to be rather big. However, we do *not* recommend you use Conda for reproducibly running workflows. The Conda solution proposed here really is mostly for development. We will not give support for this. 
+
+We do not recommend Conda for running the workflow. It may happen that packages are not available in any channels anymore and that the environment is broken. For reproducible research, please use containers.
+
+Provided you have a working [Conda](https://docs.conda.io/en/latest/) installation, you can run the workflow with
+
+```bash
+mkdir test_out/
+nextflow run main.nf \
+    -profile local,conda \
+    --input=/path/to/your.bam \
+    --outputDir=test_out \
+    --sortFastqs=false
+```
+
+For each BAM file in the comma-separated `--input` parameter, one directory with FASTQs is created in the `outputDir`. With the `local` profile the processing jobs will be executed locally. The `conda` profile will let Nextflow create a Conda environment from the `task-environment.yml` file. By default, the conda environment will be created in the source directory of the workflow (see [nextflow.config](https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/nextflow.config)).
+
 
 ## Remarks
 
@@ -132,8 +136,8 @@ By default, the Conda environments of the jobs as well as the Singularity contai
 cd $workflowRepoDir
 # Refer to the nextflow.config for the name of the Singularity image.
 singularity build \
-  cache/singularity/nf-bam2fastq_1.0.0.sif \
-  docker://ghcr.io/dkfz-odcf/nf-bam2fastq:1.0.0
+  cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$version.img \
+  docker://ghcr.io/dkfz-odcf/nf-bam2fastq:$version
   
 # Test your container
 test/test1.sh test-results/ singularity nextflowEnv/
@@ -188,6 +192,11 @@ This is an outline of the procedure to release the container to [Github Containe
    ```
 
 ## Release Notes
+
+* 1.3.0
+  * Minor: Let Nextflow automatically create the cached Singularity image.
+    > NOTE: The cached image name was changed to Nextflow's default name. If you want to prevent a re-conversion of the image, you may rename an existing image to `cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$version.img`.
+  * Patch: Mention Conda only for development in `README.md`.
 
 * 1.2.0
   * Minor: Updated to miniconda3:4.10.3 base container, because the previous version (4.9.2) didn't build anymore.
