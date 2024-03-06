@@ -112,6 +112,150 @@ These files are all always produced, independent of whether your data is actuall
 
 Note that Nextflow creates the `work/` directory, the `.nextflow/` directory, and the `.nextflow.log*` files in the directory in which it is executed.
 
+#### Example
+
+For instance, the output for the two test BAMs in the `test/reference/` directory would look as follows. Note that these files contain multiple read groups:
+
+```bash
+$ samtools view -H | grep -P '^@RG'
+@RG     ID:run4_gerald_D1VCPACXX_4      LB:tumor_gms    PL:ILLUMINA     SM:sample_tumor_gms
+@RG     ID:run5_gerald_D1VCPACXX_5      LB:tumor_gms    PL:ILLUMINA     SM:sample_tumor_gms
+@RG     ID:run1_gerald_D1VCPACXX_1      LB:tumor_gms    PL:ILLUMINA     SM:sample_tumor_gms
+@RG     ID:run3_gerald_D1VCPACXX_3      LB:tumor_gms    PL:ILLUMINA     SM:sample_tumor_gms
+@RG     ID:run2_gerald_D1VCPACXX_2      LB:tumor_gms    PL:ILLUMINA     SM:sample_tumor_gms
+```
+
+Consequently, there will be a lot of output files:
+
+```bash
+test1_paired.bam
+test1_paired.bam_fastqs/
+├── default_R1.fastq.gz
+├── default_R2.fastq.gz
+├── default_S.fastq.gz
+├── default_U1.fastq.gz
+├── default_U2.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R1.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R2.fastq.gz
+├── run1_gerald_D1VCPACXX_1_S.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U1.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U2.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R1.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R2.fastq.gz
+├── run2_gerald_D1VCPACXX_2_S.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U1.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U2.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R1.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R2.fastq.gz
+├── run3_gerald_D1VCPACXX_3_S.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U1.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U2.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R1.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R2.fastq.gz
+├── run4_gerald_D1VCPACXX_4_S.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U1.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U2.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R1.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R2.fastq.gz
+├── run5_gerald_D1VCPACXX_5_S.fastq.gz
+├── run5_gerald_D1VCPACXX_5_U1.fastq.gz
+└── run5_gerald_D1VCPACXX_5_U2.fastq.gz
+test1_paired.bam_sorted_fastqs/
+├── default_R1.sorted.fastq.gz
+├── default_R2.sorted.fastq.gz
+├── default_S.sorted.fastq.gz
+├── default_U1.sorted.fastq.gz
+├── default_U2.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R1.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R2.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_S.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U1.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U2.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R1.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R2.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_S.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U1.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U2.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R1.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R2.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_S.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U1.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U2.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R1.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R2.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_S.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U1.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U2.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R1.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R2.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_S.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_U1.sorted.fastq.gz
+└── run5_gerald_D1VCPACXX_5_U2.sorted.fastq.gz
+test1_unpaired.bam
+test1_unpaired.bam_fastqs/
+├── default_R1.fastq.gz
+├── default_R2.fastq.gz
+├── default_S.fastq.gz
+├── default_U1.fastq.gz
+├── default_U2.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R1.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R2.fastq.gz
+├── run1_gerald_D1VCPACXX_1_S.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U1.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U2.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R1.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R2.fastq.gz
+├── run2_gerald_D1VCPACXX_2_S.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U1.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U2.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R1.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R2.fastq.gz
+├── run3_gerald_D1VCPACXX_3_S.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U1.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U2.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R1.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R2.fastq.gz
+├── run4_gerald_D1VCPACXX_4_S.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U1.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U2.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R1.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R2.fastq.gz
+├── run5_gerald_D1VCPACXX_5_S.fastq.gz
+├── run5_gerald_D1VCPACXX_5_U1.fastq.gz
+└── run5_gerald_D1VCPACXX_5_U2.fastq.gz
+test1_unpaired.bam_sorted_fastqs/
+├── default_R1.sorted.fastq.gz
+├── default_R2.sorted.fastq.gz
+├── default_S.sorted.fastq.gz
+├── default_U1.sorted.fastq.gz
+├── default_U2.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R1.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R2.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_S.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U1.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U2.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R1.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R2.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_S.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U1.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U2.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R1.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R2.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_S.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U1.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U2.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R1.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R2.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_S.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U1.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U2.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R1.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R2.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_S.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_U1.sorted.fastq.gz
+└── run5_gerald_D1VCPACXX_5_U2.sorted.fastq.gz
+```
+
 ## Environment and Execution
 
 [Nextflow](https://www.nextflow.io/docs/latest/config.html#config-profiles)'s `-profile` parameter allows setting technical options for executing the workflow. You have already seen some of the profiles and that these can be combined. We conceptually separated the predefined profiles into two types -- those concerning the "environment" and those for selecting the "executor".
