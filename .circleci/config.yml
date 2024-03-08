@@ -23,7 +23,7 @@ jobs:
             - v1-job-env-{{ .Branch }}-{{ checksum "task-environment.yml" }}
       - run:
           name: "run integration tests"
-          command: "integration-tests/run.sh tests-results/ mamba nextflowEnv/"
+          command: "integration-tests/run.sh mamba tests-results/ nextflowEnv/"
       - save_cache:
           key: v1-nextflow-env-{{ .Branch }}-{{ checksum "tests-environment.yml" }}
           paths:

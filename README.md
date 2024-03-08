@@ -284,7 +284,7 @@ singularity build \
   container-specs/Singularity.def
   
 # Test your container
-integration-tests/run.sh tests-results/ singularity nextflowEnv/
+integration-tests/run.sh singularity test-results/ nextflowEnv/
 ```
 
 This is suited for either a user-specific installation or for a centralized installation for which the environments should be shared for all users. Please refer to the `nextflow.config` or the `NXF_*_CACHEDIR` environment variables to change this default (see [here](https://www.nextflow.io/docs/latest/config.html#environment-variables). 
@@ -296,10 +296,10 @@ Make sure your users have read and execute permissions on the directories and re
 The integration tests can be run with
 
 ```bash
-integration-tests/run.sh tests-results/ $profile
+integration-tests/run.sh $profile test-results/
 ```
 
-This will create a test Conda environment in `test-results/nextflowEnv` and then run the tests. For the tests themselves you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. These integration tests are also run in Travis CI.
+This will create a test Conda environment in `./nextflowEnv` and then run the tests. For the tests themselves you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. These integration tests are also run in Travis CI.
 
 ### Continuous Delivery
 
@@ -328,7 +328,7 @@ This is an outline of the procedure to release the container to [Github Containe
 3. Edit the version-tag for the docker container in the "docker"-profile in the `nextflow.config` to match `$containerVersion`.
 4. Run the integration test with the new container
    ```bash
-   integration-tests/run.sh docker-tests docker
+   integration-tests/run.sh docker docker-test-results/
    ```
 5. If the test succeeds, push the container to Github container registry. Set the CR_PAT variable to your personal access token (PAT):
    ```bash
@@ -347,7 +347,7 @@ This is an outline of the procedure to release the container to [Github Containe
   * Patch: Added a `Singularity.def`, in case the automatic conversion by Nextflow does not work.
   * Patch: Mention Conda only for development in `README.md`. Otherwise, it should not be used.
   * Patch: Test-script now implements a simple backwards-compatibility test by comparing against old result files.
-  * Patch: Renamed `test/test1.sh` to `integration-tests/run.sh`.
+  * Patch: Renamed `test/test1.sh` to `integration-tests/run.sh`. Changed order of parameters.
 
 * 1.2.0 (May, 2023)
   * Minor: Updated to miniconda3:4.10.3 base container, because the previous version (4.9.2) didn't build anymore.

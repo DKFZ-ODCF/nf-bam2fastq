@@ -9,9 +9,11 @@ set -x
 set -ue
 set -o pipefail
 
-outDir="${1:?No outDir set}"
-environmentProfile="${2:-singularity}"
-nextflowEnvironment="${3:-$outDir/nextflowEnv}"
+testsDir="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
+
+environmentProfile="${1:-singularity}"
+outDir="${2:?No outDir set}"
+nextflowEnvironment="${3:-$testsDir/nextflowEnv}"
 
 if command -v mamba; then
   condaBinary=mamba
@@ -19,7 +21,7 @@ else
   condaBinary=conda
 fi
 
-workflowDir="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/..")"
+workflowDir="$testsDir/.."
 
 readsInBam() {
   local bamFile="${1:?No BAM file given}"
