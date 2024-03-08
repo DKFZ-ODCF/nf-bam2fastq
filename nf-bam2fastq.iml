@@ -10,14 +10,15 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/bin" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/cache/conda/nf-bam2fastq-3e98300235b5aed9f3835e00669fb59f" />
-      <excludeFolder url="file://$MODULE_DIR$/test/output-all" />
       <excludeFolder url="file://$MODULE_DIR$/.nextflow" />
       <excludeFolder url="file://$MODULE_DIR$/cache" />
       <excludeFolder url="file://$MODULE_DIR$/nextflowEnv" />
+      <excludeFolder url="file://$MODULE_DIR$/integration-tests/output-all" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="groovy-2.4.19" level="application" />
     <orderEntry type="library" name="groovy-2.4.19" level="application" />
+    <orderEntry type="library" name="groovy" level="project" />
   </component>
 </module>

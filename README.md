@@ -14,7 +14,7 @@ For instance, if you want to run the workflow locally with Docker you can do e.g
 nextflow run main.nf \
     -profile local,docker \
     -ansi-log \
-    --input=test/test1_paired.bam,test/test1_unpaired.bam \
+    --input=integration-tests/test1_paired.bam,integration-tests/test1_unpaired.bam \
     --outputDir=test_out \
     --sortFastqs=true
 ```
@@ -28,21 +28,21 @@ You can run the workflow with the "singularity" profile, e.g. on an LSF cluster:
 ```bash
 nextflow run $repoDir/main.nf \
  -profile lsf,singularity \
- --input=$repoDir/test/test1_paired.bam,$repoDir/test/test1_unpaired.bam \
+ --input=$repoDir/integration-tests/test1_paired.bam,$repoDir/integration-tests/test1_unpaired.bam \
  --outputDir=test_out \
  --sortFastqs=true
 ```
 
-Nextflow will automatically pull the Docker image, convert it into a Singularity image, put it at `$repoDir/cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$version.img`, and then run the workflow.
+Nextflow will automatically pull the Docker image, convert it into a Singularity image, put it at `$repoDir/cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$containerVersion.img`, and then run the workflow.
 
 > WARNING: Downloading the cached container is probably *not* concurrency-safe. If you run multiple workflows at the same time, all of them trying to cache the Singularity container, you will probably end up with a mess. In that case, download the container manually with following command to pull the container:
 > ```bash
->  version=1.0.0
+>  containerVersion=1.3.0
 >  repoDir=/path/to/nf-bam2fastq
 >   
 >  singularity build \
->    "$repoDir/cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$version.img" \
->    "docker://ghcr.io/dkfz-odcf/nf-bam2fastq:$version"
+>    "$repoDir/cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$containerVersion.img" \
+>    "docker://ghcr.io/dkfz-odcf/nf-bam2fastq:$containerVersion"
 >  ```
 
 ## Quickstart with Conda
@@ -114,7 +114,7 @@ Note that Nextflow creates the `work/` directory, the `.nextflow/` directory, an
 
 #### Example
 
-For instance, the output for the two test BAMs in the `test/reference/` directory would look as follows. Note that these files contain multiple read groups:
+For instance, the output for the two test BAMs in the `integration-tests/reference/` directory would look as follows. Note that these files contain multiple read groups:
 
 ```bash
 $ samtools view -H | grep -P '^@RG'
@@ -280,11 +280,11 @@ By default, the Conda environments of the jobs as well as the Singularity contai
 cd $workflowRepoDir
 # Refer to the nextflow.config for the name of the Singularity image.
 singularity build \
-  cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$version.img \
-  docker://ghcr.io/dkfz-odcf/nf-bam2fastq:$version
+  cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$containerVersion.img \
+  container-specs/Singularity.def
   
 # Test your container
-test/test1.sh test-results/ singularity nextflowEnv/
+integration-tests/run.sh tests-results/ singularity nextflowEnv/
 ```
 
 This is suited for either a user-specific installation or for a centralized installation for which the environments should be shared for all users. Please refer to the `nextflow.config` or the `NXF_*_CACHEDIR` environment variables to change this default (see [here](https://www.nextflow.io/docs/latest/config.html#environment-variables). 
@@ -296,7 +296,7 @@ Make sure your users have read and execute permissions on the directories and re
 The integration tests can be run with
 
 ```bash
-test/test1.sh test-results/ $profile
+integration-tests/run.sh tests-results/ $profile
 ```
 
 This will create a test Conda environment in `test-results/nextflowEnv` and then run the tests. For the tests themselves you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. These integration tests are also run in Travis CI.
@@ -313,37 +313,43 @@ This is an outline of the procedure to release the container to [Github Containe
 
 1. Set the version that you want to release as variable. For the later commands you can set the Bash variable
    ```bash
-   versionTag=1.2.0
+   containerVersion=1.3.0
    ```
 2. Build the container.
-  ```bash
+   ```bash
    docker \
       build \
-      -t ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag \
+      -t ghcr.io/dkfz-odcf/nf-bam2fastq:$containerVersion \
       --build-arg HTTP_PROXY=$HTTP_PROXY \
       --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+      -f container-specs/Dockerfile \
       ./
    ```
-3. Edit the version-tag for the docker container in the "docker"-profile in the `nextflow.config` to match `$versionTag`.
+3. Edit the version-tag for the docker container in the "docker"-profile in the `nextflow.config` to match `$containerVersion`.
 4. Run the integration test with the new container
    ```bash
-   test/test1.sh docker-test docker
+   integration-tests/run.sh docker-tests docker
    ```
 5. If the test succeeds, push the container to Github container registry. Set the CR_PAT variable to your personal access token (PAT):
    ```bash
    echo $CR_PAT | docker login ghcr.io -u vinjana --password-stdin
-   docker image push ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag
+   docker image push ghcr.io/dkfz-odcf/nf-bam2fastq:$containerVersion
    ```
 
 ## Release Notes
 
-* 1.3.0
+* 1.3.0 (March, 2024)
   * Minor: Let Nextflow automatically create the cached Singularity image.
-    > NOTE: The cached image name was changed to Nextflow's default name. If you want to prevent a re-conversion of the image, you may rename an existing image to `cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$version.img`.
-  * Patch: Mention Conda only for development in `README.md`.
+    > NOTE: The cached image name was changed to Nextflow's default name.
+  * Patch: Reuse to the simpler Dockerfile that is also used in the [nf-seq-qc](https://gitlab.com/one-touch-pipeline/workflows/nf-seq-qc) and [nf-seq-convert](https://gitlab.com/one-touch-pipeline/workflows/nf-seq-convert) workflows.
+  * Patch: Bumped Dockerfile base image to miniconda3:4.12.0.
+  * Patch: Bumped minimum Nextflow to 23.10.1. Version 22 uses `singularity exec`, while 23 uses `singularity run`, which impacts process isolation.
+  * Patch: Added a `Singularity.def`, in case the automatic conversion by Nextflow does not work.
+  * Patch: Mention Conda only for development in `README.md`. Otherwise, it should not be used.
   * Patch: Test-script now implements a simple backwards-compatibility test by comparing against old result files.
+  * Patch: Renamed `test/test1.sh` to `integration-tests/run.sh`.
 
-* 1.2.0
+* 1.2.0 (May, 2023)
   * Minor: Updated to miniconda3:4.10.3 base container, because the previous version (4.9.2) didn't build anymore.
   * Minor: Use `-env none` for "lsf" cluster profile. Local environment should not be copied. This probably caused problems with the old "dkfzModules" environment profile.
   * Patch: Require Nextflow >= 22.07.1, which fixes an LSF memory request bug. Added options for per-job memory requests to "lsf" profile in `nextflow.config`.

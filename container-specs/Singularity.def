@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2023 The OTP authors
+#
+# SPDX-License-Identifier: MIT
+
+# This file is needed for the conversion of the Docker image into a Singularity image that
+# can be executed with `singularity exec`, like Nextflow does it. `singularity exec` does *not*
+# invoke the runscript, but the environment initialization in the Dockerfile is done via the
+# ENTRYPOINT and that is converted into the Singularity runscript.
+#
+# Note that the docker-daemon bootstrap allows to do this with locally tagged images.
+Bootstrap: docker-daemon
+From: ghcr.io/dkfz-odcf/nf-bam2fastq:1.3.0
+
+%environment
+    source activate "$envName"

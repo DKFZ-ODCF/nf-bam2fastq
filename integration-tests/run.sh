@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2022 DKFZ.
+# Copyright (c) 2024 DKFZ.
 #
 # Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/LICENSE.txt).
 #
@@ -13,7 +13,7 @@ outDir="${1:?No outDir set}"
 environmentProfile="${2:-singularity}"
 nextflowEnvironment="${3:-$outDir/nextflowEnv}"
 
-if [[ "$environmentProfile" == "mamba" ]]; then
+if command -v mamba; then
   condaBinary=mamba
 else
   condaBinary=conda
@@ -71,6 +71,7 @@ set -ue
 
 # Keep memory footprint small
 export NXF_OPTS="-Xmx128m"
+export NXF_SINGULARITY_RUN_COMMAND=run
 
 # Run the tests.
 nextflow run "$workflowDir/main.nf" \
@@ -78,18 +79,18 @@ nextflow run "$workflowDir/main.nf" \
   -ansi-log \
   -resume \
   -work-dir "$outDir/work" \
-  --input="$workflowDir/test/reference/test1_paired.bam,$workflowDir/test/reference/test1_unpaired.bam" \
+  --input="$workflowDir/integration-tests/reference/test1_paired.bam,$workflowDir/integration-tests/reference/test1_unpaired.bam" \
   --outputDir="$outDir" \
   --sortFastqs=false \
   --compressorThreads=0 \
   --sortThreads=1 \
   --sortMemory="100 MB"
 assertEqual \
-  "$(readsInBam "$workflowDir/test/reference/test1_paired.bam")" \
+  "$(readsInBam "$workflowDir/integration-tests/reference/test1_paired.bam")" \
   "$(readsInOutputDir "$outDir/test1_paired.bam_fastqs")" \
   "Read number in unsorted output FASTQs on paired-end input bam"
 assertEqual \
-  "$(readsInBam "$workflowDir/test/reference/test1_unpaired.bam")" \
+  "$(readsInBam "$workflowDir/integration-tests/reference/test1_unpaired.bam")" \
   "$(readsInOutputDir "$outDir/test1_unpaired.bam_fastqs")" \
   "Read number in unsorted output FASTQs on single-end input bam"
 
@@ -98,18 +99,18 @@ nextflow run "$workflowDir/main.nf" \
   -ansi-log \
   -resume \
   -work-dir "$outDir/work" \
-  --input="$workflowDir/test/reference/test1_paired.bam,$workflowDir/test/reference/test1_unpaired.bam" \
+  --input="$workflowDir/integration-tests/reference/test1_paired.bam,$workflowDir/integration-tests/reference/test1_unpaired.bam" \
   --outputDir="$outDir" \
   --sortFastqs=true \
   --compressorThreads=0 \
   --sortThreads=1 \
   --sortMemory="100 MB"
 assertEqual \
-  "$(readsInBam "$workflowDir/test/reference/test1_paired.bam")" \
+  "$(readsInBam "$workflowDir/integration-tests/reference/test1_paired.bam")" \
   "$(readsInOutputDir "$outDir/test1_paired.bam_sorted_fastqs")" \
   "Read number in sorted output FASTQs on paired-end input bam"
 assertEqual \
-  "$(readsInBam "$workflowDir/test/reference/test1_unpaired.bam")" \
+  "$(readsInBam "$workflowDir/integration-tests/reference/test1_unpaired.bam")" \
   "$(readsInOutputDir "$outDir/test1_unpaired.bam_sorted_fastqs")" \
   "Read number in sorted output FASTQs on single-end input bam"
 
