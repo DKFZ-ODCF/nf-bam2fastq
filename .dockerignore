@@ -9,5 +9,10 @@ work
 .circleci
 cache
 .git
+.github
 .gitignore
-nextflowEnv
+*Env/
+integration-tests/
+.run/
+*.log
+*Env/

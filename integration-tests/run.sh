@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2022 DKFZ.
+# Copyright (c) 2024 DKFZ.
 #
 # Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/LICENSE.txt).
 #
@@ -9,17 +9,19 @@ set -x
 set -ue
 set -o pipefail
 
-outDir="${1:?No outDir set}"
-environmentProfile="${2:-conda}"
-nextflowEnvironment="${3:-$outDir/nextflowEnv}"
+testsDir="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
 
-if [[ "$environmentProfile" == "mamba" ]]; then
+environmentProfile="${1:-singularity}"
+outDir="${2:?No outDir set}"
+nextflowEnvironment="${3:-$testsDir/nextflowEnv}"
+
+if command -v mamba; then
   condaBinary=mamba
 else
   condaBinary=conda
 fi
 
-workflowDir="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/..")"
+workflowDir="$testsDir/.."
 
 readsInBam() {
   local bamFile="${1:?No BAM file given}"
@@ -71,6 +73,7 @@ set -ue
 
 # Keep memory footprint small
 export NXF_OPTS="-Xmx128m"
+export NXF_SINGULARITY_RUN_COMMAND=run
 
 # Run the tests.
 nextflow run "$workflowDir/main.nf" \
@@ -78,18 +81,18 @@ nextflow run "$workflowDir/main.nf" \
   -ansi-log \
   -resume \
   -work-dir "$outDir/work" \
-  --input="$workflowDir/test/test1_paired.bam,$workflowDir/test/test1_unpaired.bam" \
+  --input="$workflowDir/integration-tests/reference/test1_paired.bam,$workflowDir/integration-tests/reference/test1_unpaired.bam" \
   --outputDir="$outDir" \
   --sortFastqs=false \
   --compressorThreads=0 \
   --sortThreads=1 \
   --sortMemory="100 MB"
 assertEqual \
-  "$(readsInBam "$workflowDir/test/test1_paired.bam")" \
+  "$(readsInBam "$workflowDir/integration-tests/reference/test1_paired.bam")" \
   "$(readsInOutputDir "$outDir/test1_paired.bam_fastqs")" \
   "Read number in unsorted output FASTQs on paired-end input bam"
 assertEqual \
-  "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" \
+  "$(readsInBam "$workflowDir/integration-tests/reference/test1_unpaired.bam")" \
   "$(readsInOutputDir "$outDir/test1_unpaired.bam_fastqs")" \
   "Read number in unsorted output FASTQs on single-end input bam"
 
@@ -98,19 +101,27 @@ nextflow run "$workflowDir/main.nf" \
   -ansi-log \
   -resume \
   -work-dir "$outDir/work" \
-  --input="$workflowDir/test/test1_paired.bam,$workflowDir/test/test1_unpaired.bam" \
+  --input="$workflowDir/integration-tests/reference/test1_paired.bam,$workflowDir/integration-tests/reference/test1_unpaired.bam" \
   --outputDir="$outDir" \
   --sortFastqs=true \
   --compressorThreads=0 \
   --sortThreads=1 \
   --sortMemory="100 MB"
 assertEqual \
-  "$(readsInBam "$workflowDir/test/test1_paired.bam")" \
+  "$(readsInBam "$workflowDir/integration-tests/reference/test1_paired.bam")" \
   "$(readsInOutputDir "$outDir/test1_paired.bam_sorted_fastqs")" \
   "Read number in sorted output FASTQs on paired-end input bam"
 assertEqual \
-  "$(readsInBam "$workflowDir/test/test1_unpaired.bam")" \
+  "$(readsInBam "$workflowDir/integration-tests/reference/test1_unpaired.bam")" \
   "$(readsInOutputDir "$outDir/test1_unpaired.bam_sorted_fastqs")" \
   "Read number in sorted output FASTQs on single-end input bam"
+
+for ref in reference/test*/*; do
+  out="$outDir/$(echo "$ref" | sed "s/reference//")"
+  assertEqual \
+    "$(zcat "$ref" | md5sum | cut -d' ' -f1)" \
+    "$(zcat "$out" | md5sum | cut -d' ' -f1)" \
+    "MD5 of $ref and $out"
+done
 
 testFinished

@@ -17,15 +17,15 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-nextflow-env-{{ .Branch }}-{{ checksum "test-environment.yml" }}
+            - v1-nextflow-env-{{ .Branch }}-{{ checksum "tests-environment.yml" }}
       - restore_cache:
           keys:
             - v1-job-env-{{ .Branch }}-{{ checksum "task-environment.yml" }}
       - run:
           name: "run integration tests"
-          command: "test/test1.sh test-results/ mamba nextflowEnv/"
+          command: "integration-tests/run.sh mamba tests-results/ nextflowEnv/"
       - save_cache:
-          key: v1-nextflow-env-{{ .Branch }}-{{ checksum "test-environment.yml" }}
+          key: v1-nextflow-env-{{ .Branch }}-{{ checksum "tests-environment.yml" }}
           paths:
             - nextflowEnv/
       - save_cache:
@@ -38,4 +38,4 @@ jobs:
 workflows:
   test-workflow:
     jobs:
-      - integration-test
+      - integration-tests

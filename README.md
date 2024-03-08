@@ -4,24 +4,6 @@
 
 Convert BAM files back to FASTQ.
 
-## Quickstart with Conda
-
-We do not recommend Conda for running the workflow. It may happen that packages are not available in any channels anymore and that the environment is broken. For reproducible research, please use containers.
-
-Provided you have a working [Conda](https://docs.conda.io/en/latest/) installation, you can run the workflow with
-
-```bash
-mkdir test_out/
-nextflow run main.nf \
-    -profile local,conda \
-    -ansi-log \
-    --input=/path/to/your.bam \
-    --outputDir=test_out \
-    --sortFastqs=false
-```
-
-For each BAM file in the comma-separated `--input` parameter, one directory with FASTQs is created in the `outputDir`. With the `local` profile the processing jobs will be executed locally. The `conda` profile will let Nextflow create a Conda environment from the `task-environment.yml` file. By default, the conda environment will be created in the source directory of the workflow (see [nextflow.config](https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/nextflow.config)).
-
 ## Quickstart with Docker
 
 Dependent on the version of the workflow that you want to run it might not be possible to re-build the Conda environment. Therefore, to guarantee reproducibility we create [container images](https://github.com/orgs/DKFZ-ODCF/packages) of the task environment.
@@ -32,7 +14,7 @@ For instance, if you want to run the workflow locally with Docker you can do e.g
 nextflow run main.nf \
     -profile local,docker \
     -ansi-log \
-    --input=test/test1_paired.bam,test/test1_unpaired.bam \
+    --input=integration-tests/test1_paired.bam,integration-tests/test1_unpaired.bam \
     --outputDir=test_out \
     --sortFastqs=true
 ```
@@ -41,25 +23,47 @@ nextflow run main.nf \
 
 In your cluster, you may not have access to Docker. In this situation you can use [Singularity](https://singularity.lbl.gov/), if it is installed in your cluster. Note that unfortunately, Nextflow will fail to convert the Docker image into a Singularity image, unless Docker is available. But you can get the Singularity image yourself:
 
-1. Create a Singularity image from the public Docker container
-   ```bash
-   version=1.0.0
-   repoDir=/path/to/nf-bam2fastq
-   
-   singularity build \
-     "$repoDir/cache/singularity/nf-bam2fastq_$version.sif" \
-     "docker://ghcr.io/dkfz-odcf/nf-bam2fastq:$version"
-   ```
-   Note that the location and name of the Singularity image is configured in the `nextflow.config`.
-3. Now, you can run the workflow with the "singularity" profile, e.g. on an LSF cluster:
-   ```bash
-   nextflow run /path/to/nf-bam2fastq/main.nf \
-     -profile lsf,singularity \
-     -ansi-log \
-     --input=test/test1_paired.bam,test/test1_unpaired.bam \
-     --outputDir=test_out \
-     --sortFastqs=true
-   ```
+You can run the workflow with the "singularity" profile, e.g. on an LSF cluster:
+
+```bash
+nextflow run $repoDir/main.nf \
+ -profile lsf,singularity \
+ --input=$repoDir/integration-tests/test1_paired.bam,$repoDir/integration-tests/test1_unpaired.bam \
+ --outputDir=test_out \
+ --sortFastqs=true
+```
+
+Nextflow will automatically pull the Docker image, convert it into a Singularity image, put it at `$repoDir/cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$containerVersion.img`, and then run the workflow.
+
+> WARNING: Downloading the cached container is probably *not* concurrency-safe. If you run multiple workflows at the same time, all of them trying to cache the Singularity container, you will probably end up with a mess. In that case, download the container manually with following command to pull the container:
+> ```bash
+>  containerVersion=1.3.0
+>  repoDir=/path/to/nf-bam2fastq
+>   
+>  singularity build \
+>    "$repoDir/cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$containerVersion.img" \
+>    "docker://ghcr.io/dkfz-odcf/nf-bam2fastq:$containerVersion"
+>  ```
+
+## Quickstart with Conda
+
+> NOTE: Conda is a decent tool for building containers, although these containers tend to be rather big. However, we do *not* recommend you use Conda for reproducibly running workflows. The Conda solution proposed here really is mostly for development. We will not give support for this. 
+
+We do not recommend Conda for running the workflow. It may happen that packages are not available in any channels anymore and that the environment is broken. For reproducible research, please use containers.
+
+Provided you have a working [Conda](https://docs.conda.io/en/latest/) installation, you can run the workflow with
+
+```bash
+mkdir test_out/
+nextflow run main.nf \
+    -profile local,conda \
+    --input=/path/to/your.bam \
+    --outputDir=test_out \
+    --sortFastqs=false
+```
+
+For each BAM file in the comma-separated `--input` parameter, one directory with FASTQs is created in the `outputDir`. With the `local` profile the processing jobs will be executed locally. The `conda` profile will let Nextflow create a Conda environment from the `task-environment.yml` file. By default, the conda environment will be created in the source directory of the workflow (see [nextflow.config](https://github.com/DKFZ-ODCF/nf-bam2fastq/blob/master/nextflow.config)).
+
 
 ## Remarks
 
@@ -108,6 +112,150 @@ These files are all always produced, independent of whether your data is actuall
 
 Note that Nextflow creates the `work/` directory, the `.nextflow/` directory, and the `.nextflow.log*` files in the directory in which it is executed.
 
+#### Example
+
+For instance, the output for the two test BAMs in the `integration-tests/reference/` directory would look as follows. Note that these files contain multiple read groups:
+
+```bash
+$ samtools view -H | grep -P '^@RG'
+@RG     ID:run4_gerald_D1VCPACXX_4      LB:tumor_gms    PL:ILLUMINA     SM:sample_tumor_gms
+@RG     ID:run5_gerald_D1VCPACXX_5      LB:tumor_gms    PL:ILLUMINA     SM:sample_tumor_gms
+@RG     ID:run1_gerald_D1VCPACXX_1      LB:tumor_gms    PL:ILLUMINA     SM:sample_tumor_gms
+@RG     ID:run3_gerald_D1VCPACXX_3      LB:tumor_gms    PL:ILLUMINA     SM:sample_tumor_gms
+@RG     ID:run2_gerald_D1VCPACXX_2      LB:tumor_gms    PL:ILLUMINA     SM:sample_tumor_gms
+```
+
+Consequently, there will be a lot of output files:
+
+```bash
+test1_paired.bam
+test1_paired.bam_fastqs/
+├── default_R1.fastq.gz
+├── default_R2.fastq.gz
+├── default_S.fastq.gz
+├── default_U1.fastq.gz
+├── default_U2.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R1.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R2.fastq.gz
+├── run1_gerald_D1VCPACXX_1_S.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U1.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U2.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R1.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R2.fastq.gz
+├── run2_gerald_D1VCPACXX_2_S.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U1.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U2.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R1.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R2.fastq.gz
+├── run3_gerald_D1VCPACXX_3_S.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U1.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U2.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R1.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R2.fastq.gz
+├── run4_gerald_D1VCPACXX_4_S.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U1.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U2.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R1.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R2.fastq.gz
+├── run5_gerald_D1VCPACXX_5_S.fastq.gz
+├── run5_gerald_D1VCPACXX_5_U1.fastq.gz
+└── run5_gerald_D1VCPACXX_5_U2.fastq.gz
+test1_paired.bam_sorted_fastqs/
+├── default_R1.sorted.fastq.gz
+├── default_R2.sorted.fastq.gz
+├── default_S.sorted.fastq.gz
+├── default_U1.sorted.fastq.gz
+├── default_U2.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R1.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R2.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_S.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U1.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U2.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R1.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R2.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_S.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U1.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U2.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R1.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R2.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_S.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U1.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U2.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R1.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R2.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_S.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U1.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U2.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R1.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R2.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_S.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_U1.sorted.fastq.gz
+└── run5_gerald_D1VCPACXX_5_U2.sorted.fastq.gz
+test1_unpaired.bam
+test1_unpaired.bam_fastqs/
+├── default_R1.fastq.gz
+├── default_R2.fastq.gz
+├── default_S.fastq.gz
+├── default_U1.fastq.gz
+├── default_U2.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R1.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R2.fastq.gz
+├── run1_gerald_D1VCPACXX_1_S.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U1.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U2.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R1.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R2.fastq.gz
+├── run2_gerald_D1VCPACXX_2_S.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U1.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U2.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R1.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R2.fastq.gz
+├── run3_gerald_D1VCPACXX_3_S.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U1.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U2.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R1.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R2.fastq.gz
+├── run4_gerald_D1VCPACXX_4_S.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U1.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U2.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R1.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R2.fastq.gz
+├── run5_gerald_D1VCPACXX_5_S.fastq.gz
+├── run5_gerald_D1VCPACXX_5_U1.fastq.gz
+└── run5_gerald_D1VCPACXX_5_U2.fastq.gz
+test1_unpaired.bam_sorted_fastqs/
+├── default_R1.sorted.fastq.gz
+├── default_R2.sorted.fastq.gz
+├── default_S.sorted.fastq.gz
+├── default_U1.sorted.fastq.gz
+├── default_U2.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R1.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_R2.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_S.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U1.sorted.fastq.gz
+├── run1_gerald_D1VCPACXX_1_U2.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R1.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_R2.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_S.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U1.sorted.fastq.gz
+├── run2_gerald_D1VCPACXX_2_U2.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R1.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_R2.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_S.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U1.sorted.fastq.gz
+├── run3_gerald_D1VCPACXX_3_U2.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R1.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_R2.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_S.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U1.sorted.fastq.gz
+├── run4_gerald_D1VCPACXX_4_U2.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R1.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_R2.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_S.sorted.fastq.gz
+├── run5_gerald_D1VCPACXX_5_U1.sorted.fastq.gz
+└── run5_gerald_D1VCPACXX_5_U2.sorted.fastq.gz
+```
+
 ## Environment and Execution
 
 [Nextflow](https://www.nextflow.io/docs/latest/config.html#config-profiles)'s `-profile` parameter allows setting technical options for executing the workflow. You have already seen some of the profiles and that these can be combined. We conceptually separated the predefined profiles into two types -- those concerning the "environment" and those for selecting the "executor".
@@ -132,11 +280,11 @@ By default, the Conda environments of the jobs as well as the Singularity contai
 cd $workflowRepoDir
 # Refer to the nextflow.config for the name of the Singularity image.
 singularity build \
-  cache/singularity/nf-bam2fastq_1.0.0.sif \
-  docker://ghcr.io/dkfz-odcf/nf-bam2fastq:1.0.0
+  cache/singularity/ghcr.io-dkfz-odcf-nf-bam2fastq-$containerVersion.img \
+  container-specs/Singularity.def
   
 # Test your container
-test/test1.sh test-results/ singularity nextflowEnv/
+integration-tests/run.sh singularity test-results/ nextflowEnv/
 ```
 
 This is suited for either a user-specific installation or for a centralized installation for which the environments should be shared for all users. Please refer to the `nextflow.config` or the `NXF_*_CACHEDIR` environment variables to change this default (see [here](https://www.nextflow.io/docs/latest/config.html#environment-variables). 
@@ -148,10 +296,10 @@ Make sure your users have read and execute permissions on the directories and re
 The integration tests can be run with
 
 ```bash
-test/test1.sh test-results/ $profile
+integration-tests/run.sh $profile test-results/
 ```
 
-This will create a test Conda environment in `test-results/nextflowEnv` and then run the tests. For the tests themselves you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. These integration tests are also run in Travis CI.
+This will create a test Conda environment in `./nextflowEnv` and then run the tests. For the tests themselves you can use a local Conda environment or a Docker container, dependent on whether you set `$profile` to "conda" or "docker", respectively. These integration tests are also run in Travis CI.
 
 ### Continuous Delivery
 
@@ -165,31 +313,43 @@ This is an outline of the procedure to release the container to [Github Containe
 
 1. Set the version that you want to release as variable. For the later commands you can set the Bash variable
    ```bash
-   versionTag=1.2.0
+   containerVersion=1.3.0
    ```
 2. Build the container.
-  ```bash
+   ```bash
    docker \
       build \
-      -t ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag \
+      -t ghcr.io/dkfz-odcf/nf-bam2fastq:$containerVersion \
       --build-arg HTTP_PROXY=$HTTP_PROXY \
       --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+      -f container-specs/Dockerfile \
       ./
    ```
-3. Edit the version-tag for the docker container in the "docker"-profile in the `nextflow.config` to match `$versionTag`.
+3. Edit the version-tag for the docker container in the "docker"-profile in the `nextflow.config` to match `$containerVersion`.
 4. Run the integration test with the new container
    ```bash
-   test/test1.sh docker-test docker
+   integration-tests/run.sh docker docker-test-results/
    ```
 5. If the test succeeds, push the container to Github container registry. Set the CR_PAT variable to your personal access token (PAT):
    ```bash
    echo $CR_PAT | docker login ghcr.io -u vinjana --password-stdin
-   docker image push ghcr.io/dkfz-odcf/nf-bam2fastq:$versionTag
+   docker image push ghcr.io/dkfz-odcf/nf-bam2fastq:$containerVersion
    ```
 
 ## Release Notes
 
-* 1.2.0
+* 1.3.0 (March, 2024)
+  * Minor: Let Nextflow automatically create the cached Singularity image.
+    > NOTE: The cached image name was changed to Nextflow's default name.
+  * Patch: Reuse to the simpler Dockerfile that is also used in the [nf-seq-qc](https://gitlab.com/one-touch-pipeline/workflows/nf-seq-qc) and [nf-seq-convert](https://gitlab.com/one-touch-pipeline/workflows/nf-seq-convert) workflows.
+  * Patch: Bumped Dockerfile base image to miniconda3:4.12.0.
+  * Patch: Bumped minimum Nextflow to 23.10.1. Version 22 uses `singularity exec`, while 23 uses `singularity run`, which impacts process isolation.
+  * Patch: Added a `Singularity.def`, in case the automatic conversion by Nextflow does not work.
+  * Patch: Mention Conda only for development in `README.md`. Otherwise, it should not be used.
+  * Patch: Test-script now implements a simple backwards-compatibility test by comparing against old result files.
+  * Patch: Renamed `test/test1.sh` to `integration-tests/run.sh`. Changed order of parameters.
+
+* 1.2.0 (May, 2023)
   * Minor: Updated to miniconda3:4.10.3 base container, because the previous version (4.9.2) didn't build anymore.
   * Minor: Use `-env none` for "lsf" cluster profile. Local environment should not be copied. This probably caused problems with the old "dkfzModules" environment profile.
   * Patch: Require Nextflow >= 22.07.1, which fixes an LSF memory request bug. Added options for per-job memory requests to "lsf" profile in `nextflow.config`.

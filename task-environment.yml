@@ -4,6 +4,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
+  - procps-ng
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=1_gnu
   - bash=5.0.018=h0a1914f_0

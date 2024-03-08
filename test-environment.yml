@@ -1,4 +1,4 @@
-name: test-environment
+name: tests-environment
 channels:
   - conda-forge
   - bioconda
@@ -7,6 +7,6 @@ dependencies:
   - mamba
   - bash=5.0.018
   - samtools=1.11
-  - nextflow=22.10.1
+  - nextflow=23.10.1
   - gradle=7.4.2
   - openjdk=11.0.15
